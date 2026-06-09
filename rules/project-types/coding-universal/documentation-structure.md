@@ -89,6 +89,37 @@ Every coding project has two root-level documents that serve opposite audiences.
 
 Use 🔲 for not started, 🔄 for in progress. When a task completes: move it to `current_state/milestone.md` and add a one-line row to the Completed Milestones table.
 
+### Acceptance blocks (Gherkin AC) — backward-compatible addition
+
+A task detail section MAY carry an `**Acceptance:**` block in Given/When/Then form as the **LAST element of the detail section** — added inside it, never replacing the prose/bullets. Division of labor: prose + bullets = how to build; the AC block = how to verify done.
+
+````
+### 🔲 Task Name
+
+[1–3 sentences: what this is and why it matters]
+
+- Bullet: specific implementation detail
+
+**Acceptance:**
+```gherkin
+Given a stranger with a Google account not in the system
+When they log in via Google
+Then a tenant exists with balance_usd=0 and they receive a JWT
+
+Given a Google login with an invalid or revoked token
+When the callback is processed
+Then no tenant is created and the response is 401
+```
+````
+
+Rules:
+
+- **SHOULD for behavior-changing tasks; refactor/docs tasks may omit.** No migration of existing files — the addition is backward-compatible.
+- **Timing:** AC is written at **PHASE PLANNING** — all tasks of the phase together, here in `project_status.md` — never one-at-a-time during implementation, and never in dev notes. Reason 1: the cross-task picture — along a journey, an upstream task's `Then` must produce the downstream task's `Given` (fan-out/fan-in allowed; the chain applies per journey, never phase-wide across unordered tasks) — inter-task contradictions surface before implementation. Reason 2: speed — AC→failing-test becomes mechanical translation downstream.
+- **Quality checklist:** declarative style (what, not how); `Then` = an observable, checkable state or output — never "system works"; one behavior per scenario; no UI selectors/URLs in backend AC; `Given` = a persisted or establishable state. **Each behavior AC gets a negative or boundary counter-scenario at phase planning.**
+- **Dual generation:** the owner drafts AC from intent, AI drafts independently from PRODUCT_SPEC.md, then diff — solo development collapses the Three Amigos into one head; without the diff, AC inherits its author's blind spots and "verifies" them.
+- **Lifecycle:** AC blocks archive to `current_state/milestone.md` with their tasks at PHASE END (see `logging-workflow.md` §2.6) — copied VERBATIM, never rewritten. The AC's permanent living form is the converted test suite; `project_status.md` size tracks active workload only (§10.1 multi-file pattern is the escape valve if ever needed).
+
 **4. Post-Vx Backlog** — short bullet list of future task names with 🔲, followed by `## Post-Vx Task Details` using the same `### 🔲 Task Name` + detail pattern.
 
 ### Rules

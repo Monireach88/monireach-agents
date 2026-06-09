@@ -82,7 +82,7 @@ When you need deep context, read these files:
 - `~/.claude/profile/portfolio.md` - Projects, achievements, gaps to fill
 - `~/.claude/profile/job_seeking.md` - Target roles, interview prep, challenges
 - `~/.claude/profile/health.md` - Medical history, lifestyle, concerns
-- `~/.claude/profile/learning_history.md` - Concepts mastered, current learning
+- `deliverables/daily_learnings.md` (in My Drive/monireach/) - Concepts mastered, spaced-repetition log with interview-ready Say it/Defend it lines
 
 *Note: Files are created as context emerges from conversations.*
 

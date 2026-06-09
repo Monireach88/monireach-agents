@@ -161,7 +161,7 @@ When user says "end session":
 4. **Final check:**
    - Ensure next session can resume from daily_log alone
    - All important context is captured
-   - Run `grep -n '^### ✅' current_state/project_status.md`; expected result is no output. If any completed detail section remains in `project_status.md`, run the §2.6 atomic sequence now before closing the session.
+   - Run `grep -n '^### ✅' current_state/project_status.md`; expected result is no output, EXCEPT sections marked `*(awaiting phase-end archival)*` (sanctioned by the §2.6 phase-end AC archival rule until their phase completes). If any OTHER completed detail section remains in `project_status.md`, run the §2.6 atomic sequence now before closing the session. If the phase itself completed this session, the deferred sections archive now, together.
 
 **NEVER read the entire daily_log.md file at end of session - only today's entries!**
 
@@ -176,6 +176,7 @@ When user says "end session":
 - Tasks marked 🔄 (in progress)
 - Tasks that "look done" but haven't been verified
 - Completed child subtasks whose parent task is still in progress. In that case, keep the child detail in `project_status.md` as a completed subtask entry (for example `#### ✅ ...`) until the parent task itself is fully complete.
+- **Tasks carrying an `**Acceptance:**` Gherkin block while their phase still has open (🔲/🔄) tasks — PHASE-END AC ARCHIVAL RULE.** AC blocks chain per journey (an upstream task's `Then` is a downstream task's `Given` — see `documentation-structure.md` §10.3); archiving task N's AC mid-phase would split the chain source across two files while task N+1 still chains from it. The completed task keeps its `### ✅` detail section (AC included) in `project_status.md` until the WHOLE PHASE completes, then ALL the phase's completed tasks archive together via the atomic sequence. This is the one sanctioned case where a `### ✅` section legitimately remains in `project_status.md` — mark it `### ✅ Task Name *(awaiting phase-end archival)*` so integrity checks can classify it.
 
 **Atomic sequence — run in order, do not skip steps:**
 
@@ -186,7 +187,7 @@ When user says "end session":
    ```bash
    grep -n '^### ✅' current_state/project_status.md
    ```
-   Expected result: no output. Any remaining `### ✅` section is a violation — remove it before continuing.
+   Expected result: no output, EXCEPT sections marked `*(awaiting phase-end archival)*` under the phase-end AC archival rule above — those are sanctioned until their phase completes. Any other remaining `### ✅` section is a violation — remove it before continuing.
 
 **Nested-task clarification:**
 
@@ -221,6 +222,8 @@ mount, etc. Skip for trivially obvious fixes.]
 - ✅ [file or component]: [what changed — in plain English; no function names, TypeScript syntax, or framework terms without explanation]
 - Deferred to Post-Vx: [what and why — in plain English]
 
+**Acceptance:** [if the task detail carried an `**Acceptance:**` Gherkin block, copy it here VERBATIM — see Rules]
+
 **Final state:** X/X tests passing (YYYY-MM-DD)
 ```
 
@@ -233,4 +236,5 @@ Rules:
 - Bullet lines follow the same plain-English rule — no function names, TypeScript syntax, or framework terms without explanation. If you catch yourself writing a function name or type annotation in a bullet, rewrite it as what it does, not what it is called
 - Self-check before finalizing covers ALL lines, not just the narrative sections: "If I lost all code ownership tomorrow and came back in 6 months, would I understand why this task existed, what each file change accomplished, and what to watch out for if I touch this area again?"
 - `**Final state:**` always present when there are tests; omit only if no tests apply
-- `project_status.md` must never contain `### ✅` detail sections. Completed details belong only in `current_state/milestone.md`; `project_status.md` keeps only the Completed Milestones table row plus active/backlog detail sections.
+- **Acceptance blocks are copied VERBATIM** — if the archived task detail carries an `**Acceptance:**` Gherkin block, it transfers into the milestone entry unchanged, placed after the bullets and before `**Final state:**`. The rewrite-to-plain-English rule applies to bullets, NEVER to the Gherkin block — the Given/When/Then text is a precision artifact; rewriting it destroys its value as the record of what "done" meant. Omit the slot when the task had no AC block.
+- `project_status.md` must never contain `### ✅` detail sections — with ONE exception: sections marked `*(awaiting phase-end archival)*` under the phase-end AC archival rule (see "Do NOT fire this for"), which remain only until their phase completes. All other completed details belong only in `current_state/milestone.md`; `project_status.md` keeps only the Completed Milestones table row plus active/backlog detail sections.
