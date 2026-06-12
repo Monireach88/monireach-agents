@@ -1,7 +1,7 @@
 ---
 name: guided-explore
-description: Use this skill when the user invokes "/guided-explore" or natural phrases like "walk me through", "let's explore together", "help me understand X as we go". Activates a session-wide mentoring mode — I investigate first, surface ONE blocker at a time, and guide Monireach Socratically based on his stated confidence level. No code changes unless a bug occurs.
-version: 1.0.0
+description: Use this skill when the user invokes "/guided-explore" or natural phrases like "walk me through", "let's explore together", "help me understand X as we go". Activates a session-wide mentoring mode — I investigate first, surface ONE blocker at a time, and guide Monireach Socratically based on his stated confidence level. No code changes unless a bug occurs. Also owns Completed-Task Debrief mode (`/guided-explore task: <slug>` or `/guided-explore debrief`) — post-hoc study of tasks completed by /vibe-code or /loop-dev, including on-demand practice-notebook generation.
+version: 1.1.0
 ---
 
 # Guided Explore
@@ -96,6 +96,59 @@ Offer: "Want to log this with `/log-learning`?" — do not auto-log, wait for co
 - ❌ Saying "great job!" or praising each step — just move to the next blocker
 - ❌ Asking "what do you think is wrong?" before I've looked at the files myself
 - ❌ Switching to vibe-code or code-coach behavior unless explicitly invoked
+
+---
+
+## Completed-Task Debrief Mode
+
+Post-hoc study of a task that `/vibe-code` or `/loop-dev` completed autonomously. This mode replaces vibe-code's old automatic practice notebooks (owner decision 2026-06-12: engineering and learning logic are fully separated — the loop ships code; learning happens here, on demand, for the tasks the owner chooses).
+
+**Triggers:**
+- `/guided-explore task: <slug>` — debrief a specific completed task
+- `/guided-explore debrief` — show the task picker first
+
+### Task picker (when no slug is given)
+
+1. Read the Quick Reference table at the top of `current_state/milestone.md` (recent completions + dates)
+2. List `archive/development_notes/` subdirectories (newest first) for tasks not yet archived to milestone.md
+3. Present the 5–10 most recent as a numbered list: slug, completion date, one-line "why it existed" from the milestone entry
+4. Wait for Monireach to pick one. Do not pick for him.
+
+### Building the session map (replaces the generic investigation step)
+
+Load the task's existing artifacts instead of re-investigating raw code — they ARE the map:
+
+1. **Dev note:** `archive/development_notes/YYYYMMDD_feature_name/task_name.md` — Steps 0–7 record
+2. **Acceptance block:** from the task's `current_state/milestone.md` entry (or `project_status.md` if not yet archived)
+3. **Diff:** locate the task's commits — `git log --oneline --all --grep='<slug>'` first; if empty, fall back to the commit hashes or branch name recorded in the dev note — then `git show` the relevant commits
+4. **Dataflow diagram** (`task_name.svg`) when it exists — use it as the primary navigation map (same convention as Understand-Anything integration below)
+
+Present the map as: what was built, which files changed, which AC scenarios it satisfies. Then proceed with the normal Session Protocol — confidence calibration, one blocker at a time, Socratic guidance — where "blockers" are the concepts in the diff Monireach can't yet explain.
+
+### Practice notebook (on demand)
+
+When Monireach asks for one (or accepts the offer at debrief start), generate:
+
+File: `archive/development_notes/YYYYMMDD_feature_name/task_name.ipynb`
+
+Contents (per notebook):
+- **Section 1 — What was built:** 2–3 sentences describing the task, what changed, and how it fits the system.
+- **Section 2 — Key concepts (3–5 total):** For each concept:
+  - Name + one-sentence explanation
+  - The actual code from the task (as a code cell)
+  - A "fill in the logic" exercise: skeleton with `# TODO` comments, expected output shown
+  - One assertion the filled-in cell must pass
+- The notebook must be runnable — import only standard library or already-installed packages.
+
+After creating it, report:
+```
+Practice notebook → archive/development_notes/YYYYMMDD_feature_name/task_name.ipynb
+Concepts: [concept 1], [concept 2], [concept 3]
+```
+
+### Debrief session end
+
+Same as Session End below, plus: offer `/log-learning` for concepts that clicked, and note any task whose dev note was missing or incomplete (that is a loop-quality signal — log it in `archive/daily_log.md`).
 
 ---
 

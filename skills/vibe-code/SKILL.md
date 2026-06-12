@@ -1,7 +1,7 @@
 ---
 name: vibe-code
 description: Use this skill when the user invokes "/vibe-code". Activates vibe coding mode. Agent owns implementation, detects frontend/backend mode, and applies stack-appropriate verification while Monireach reviews and directs.
-version: 1.3.0
+version: 1.5.0
 ---
 
 # Vibe Code
@@ -17,8 +17,8 @@ Monireach's role: own decisions, write requirements, trace critical paths, write
 ```
 Old loop:         AI decides → AI writes → AI verifies → user approves
 Interactive loop: User decides → AI writes → AI verifies → user traces → user summarizes
-Autonomous loop:  AI implements → AI verifies → AI prepares practice notebook → user learns on wake-up
-Frontend:         AI owns 100% — no gates, no notebooks
+Autonomous loop:  AI implements → AI verifies → user studies chosen tasks later via /guided-explore debrief
+Frontend:         AI owns 100% — no gates
 ```
 
 ---
@@ -34,7 +34,7 @@ Invoking `/vibe-code` activates **fully autonomous operation**.
 
 ---
 
-**Architectural decisions:** For concepts Monireach hasn't yet learned, Agent makes the decision and states the reasoning in one sentence, then moves on. As Monireach's knowledge grows (tracked via Gate 2 owner notes and practice notebooks), he can and should redirect any decision he disagrees with — that authority always belongs to him. Do NOT present a list of options and ask him to pick without explaining which is better and why.
+**Architectural decisions:** For concepts Monireach hasn't yet learned, Agent makes the decision and states the reasoning in one sentence, then moves on. As Monireach's knowledge grows (tracked via Gate 2 owner notes and `/guided-explore` debriefs), he can and should redirect any decision he disagrees with — that authority always belongs to him. Do NOT present a list of options and ask him to pick without explaining which is better and why.
 
 ---
 
@@ -54,14 +54,14 @@ Every atomic task runs on its own feature branch. This is non-negotiable.
 
 **After Step 7 passes (task complete and tested):**
 4. Verify required task record is complete (backend/devops: full dev note; frontend: lightweight frontend dev note)
-5. Run the independent assessment (see Step 7: `/design-audit --scope=diff` when installed, else the `claude -p` chain) — if FAIL, fix and re-run Step 7 before proceeding; if CLI is unavailable (auth error), apply the self-review fallback defined in Step 7
+5. Run the independent assessment (see Step 7: the `adversarial-verifier` subagent) — if FAIL, apply its REQUIRED_FIXES and re-run Step 7 before proceeding; if the subagent is unavailable (agent file missing), apply the self-review fallback defined in Step 7
 6. Stage and commit all changes on the feature branch
 7. Merge into development and delete the feature branch: `git checkout development && git merge feature/<task-slug> && git branch -d feature/<task-slug>`
 8. Immediately create the next feature branch from `development` and continue — do not pause or wait
 
 **Rules:**
 - Never work directly on `development`, unless Monireach explicitly instructs it
-- Only merge after: (a) all tests pass AND (b) the independent assessment (`/design-audit --scope=diff` when installed, else the `claude -p` chain) returns PASS, OR (b′) CLI/tool unavailable and self-review passes
+- Only merge after: (a) all tests pass AND (b) the `adversarial-verifier` subagent returns PASS, OR (b′) subagent unavailable and self-review passes
 - Do not wait for Monireach between feature branches — switch and continue autonomously
 
 ---
@@ -142,10 +142,10 @@ Agent owns all steps. Monireach owns decisions, requirements, and owner notes.
 | Step 4: Failing Test | Agent | Backend/devops: convert the Step 3a AC into failing tests (the TDD seed), run them, confirm Red. **The seed must include deny-path + boundary tests, not just the happy `Then`.** State-assertion ACs convert mechanically; async/eventual/infra ACs (job retries, webhook idempotency, migration reversibility) do NOT — map each to a named test+fixture pattern (time control/fake clocks, fake brokers, migration downgrade round-trips) instead of quietly downgrading the AC to a trivial assertion. **Test pyramid:** AC tests verify behavior at acceptance altitude; unit tests own branch coverage of logic-bearing modules independently — a green AC suite is NOT complete coverage. Frontend: write or update unit/component/E2E tests when a test stack exists; if no test stack exists, record the gap and proceed with lint/build/manual smoke verification. |
 | Step 5: Passing Code | Agent | Write the implementation. Backend/devops: run the target test and confirm Green. Frontend: run the relevant discovered verification gate and confirm the changed behavior is covered or manually smoke-tested. |
 | Step 6: Refactor | Agent | Clean up. Run full suite. Confirm Green. **Run §1 "At Refactor Time" checks + relevant domain section from project standards (or cheatsheet fallback — as determined at Step 0).** |
-| Step 7: Integration | Agent | Run the relevant full verification gates. Manual test if needed. **Fresh machine check:** ask "Would this work on a fresh machine with only the committed files?" If no → close the loop immediately (.env.example, docker-compose, Dockerfile, nginx.conf, etc.) or create a 🔲 task in project_status.md if it can't be done now. **Independent assessment (autonomous mode): pre-commit by default.** First, stage all task files: `git add <relevant files>` — untracked new files are invisible to `git diff` but appear in `git diff --cached`. **Assessment engine selection:** when the `/design-audit` skill is installed, run `/design-audit --scope=diff` as the independent assessment (it reviews the staged diff against PRODUCT_SPEC.md with forced ok/flaw/undecided verdicts); the `claude -p` chain below is PRESERVED as the fallback whenever `/design-audit` is absent or errors — never delete or skip the fallback chain. When using the fallback, run `claude -p "You are a code reviewer. Review the following diff. Answer two questions: (1) Is Step 7 genuinely complete? Check: all relevant verification gates pass, no placeholders, fresh machine check done. (2) What real-world scenarios do the tests NOT cover? List up to 3 gaps. Reply: PASS or FAIL, one sentence reason, then the gap list.\n\n$(git diff --cached)"` after the verification gates pass and before creating the task commit. If the independent review returns FAIL, fix the code, rerun the relevant verification gates, and rerun the review until it passes. **Commit only after the review passes.** **Post-commit review is optional, not default:** use `$(git diff development..HEAD)` only when the task commit already exists and you explicitly want a branch-diff review. **Never** use `git diff development..HEAD` for uncommitted work; it excludes working-tree changes. **If `claude -p` returns an auth or tool error (CLI unavailable):** fall back to self-review — verify (1) relevant verification gates pass, (2) required task record is complete, (3) fresh machine check is done — document outcome in the task record as "Independent assessment unavailable (CLI auth error) — self-review PASS" and proceed if all three pass. If gaps are identified (either by independent review or self-review), add them as 🔲 tasks in project_status.md before moving on. **Bug fix tasks — `/log-error` gate:** after all tests pass and fresh machine check is done, ask: was the root cause non-obvious? (masked by a mock, a missing mount, a migration side-effect, a renamed method, etc.) If YES → invoke `/log-error` before merging. If NO (trivially obvious fix: typo, wrong variable name) → skip. |
+| Step 7: Integration | Agent | Run the relevant full verification gates. Manual test if needed. **Fresh machine check:** ask "Would this work on a fresh machine with only the committed files?" If no → close the loop immediately (.env.example, docker-compose, Dockerfile, nginx.conf, etc.) or create a 🔲 task in project_status.md if it can't be done now. **Independent assessment (autonomous mode): pre-commit by default.** First, stage all task files: `git add <relevant files>` — untracked new files are invisible to `git diff` but appear in `git diff --cached`. **Assessment engine:** spawn the `adversarial-verifier` subagent as the independent assessment, after the verification gates pass and before creating the task commit. Pass it: the task's detail section from `project_status.md` (including its `**Acceptance:**` block when present) and the project root. It reads the staged diff (`git diff --cached` — which is why staging first matters), forces a pass/fail/not-covered verdict per AC scenario with file:line evidence, runs the test suite itself, and returns VERDICT + GAPS + REQUIRED_FIXES. If it returns FAIL: apply its REQUIRED_FIXES, rerun the relevant verification gates, and re-spawn the verifier — record each round's verdict in the dev note; max 3 rounds, after a 3rd FAIL the task is blocked (write the blocker into the task's detail section, do not merge). **Commit only after the verifier returns PASS.** Its GAPS (even on PASS) become 🔲 tasks in project_status.md before moving on. When the `/design-audit` skill is installed it remains a complementary spec-level audit, but the verifier's verdict is the merge gate. **If the subagent cannot be spawned (agent file missing or Task tool unavailable):** fall back to self-review — verify (1) relevant verification gates pass, (2) required task record is complete, (3) fresh machine check is done — document outcome in the task record as "Independent assessment unavailable (adversarial-verifier missing) — self-review PASS" and proceed if all three pass. **Bug fix tasks — `/log-error` gate:** after all tests pass and fresh machine check is done, ask: was the root cause non-obvious? (masked by a mock, a missing mount, a migration side-effect, a renamed method, etc.) If YES → invoke `/log-error` before merging. If NO (trivially obvious fix: typo, wrong variable name) → skip. |
 | Gate 2: Owner Note | **Monireach** | Interactive + atomic + backend/devops only. Triggers after Step 7 passes. Monireach writes a 5–7 line owner note (see Gate 2 section). Gap found → trace path together → Monireach rewrites. No gap → task done. **Skip for: Declarative, Simple, frontend, autonomous mode.** |
 
-**Checkpoint rule:** After each Monireach-facing checkpoint (Steps 3c, 5, 7), pause and wait for approval before continuing. **Exception — autonomous mode (vibe-code):** Skip all pause-and-wait checkpoints. Use the `claude -p` gate at Step 7 instead of waiting for Monireach. Write practice notebook instead of waiting for Gate 2.
+**Checkpoint rule:** After each Monireach-facing checkpoint (Steps 3c, 5, 7), pause and wait for approval before continuing. **Exception — autonomous mode (vibe-code):** Skip all pause-and-wait checkpoints. Use the `adversarial-verifier` subagent gate at Step 7 instead of waiting for Monireach. Gate 2 is skipped entirely — learning happens post-hoc via `/guided-explore task: <slug>` on the tasks Monireach chooses.
 
 **Exception override:** If Monireach says "I'll do [step name]", hand it to him immediately.
 
@@ -189,14 +189,13 @@ Frontend mode keeps the rigor but removes backend-only artifacts.
 - Dataflow diagram JSON/SVG generation
 - `pytest` assumptions
 - Gate 1 and Gate 2 (AI owns frontend 100%)
-- Practice notebooks
 
 **Keep in frontend mode:**
 - Feature branch workflow
 - Task classification
 - Steps 0–7, with frontend-native verification
 - Lightweight frontend development notes in `archive/development_notes/YYYYMMDD_feature_name/`
-- Independent `claude -p` review gate
+- Independent `adversarial-verifier` subagent review gate
 
 **Frontend verification policy:**
 - Read `package.json` and discover scripts; do not hardcode `npm test`, `pnpm test`, or framework commands
@@ -233,10 +232,10 @@ After reading the framework and before creating any feature branch:
 1. `PROJECT.md` — understand tech stack, directory map, current focus
 2. `current_state/project_status.md` — identify what is done and what is in the active backlog for the current version
 
-**Step 1b — CLI pre-flight check (autonomous mode only):**
-Run `claude -p "ping"` to verify the Claude CLI is authenticated.
-- If it responds: independent assessment is available — proceed normally.
-- If it returns an auth error: log `⚠️ Claude CLI unavailable — independent assessment will fall back to self-review for all Step 7 gates this session` in the first task record, and continue. Do NOT block.
+**Step 1b — Verifier pre-flight check (autonomous mode only):**
+Run `test -f ~/.claude/agents/adversarial-verifier.md` to verify the verifier subagent is installed.
+- If it exists: independent assessment is available — proceed normally.
+- If it is missing: log `⚠️ adversarial-verifier subagent unavailable — independent assessment will fall back to self-review for all Step 7 gates this session` in the first task record, and continue. Do NOT block.
 
 **Step 2 — Identify all tasks:**
 - Combine: tasks from the user's request + active backlog items for the current version
@@ -384,7 +383,7 @@ Notes go in: `{project_root}/archive/development_notes/{YYYYMMDD}_{feature_name}
 - `docs/diagrams/` is reserved for shared architecture diagrams referenced from README only — not task-level diagrams
 
 **Co-located artifacts (same subdirectory as the dev note):**
-- `task_name.ipynb` — practice notebook (autonomous mode) or Gate 1 gap simulation (interactive)
+- `task_name.ipynb` — Gate 1 gap simulation (interactive) or practice notebook generated later by `/guided-explore` debrief
 - `task_name.json` — dataflow diagram source
 - `task_name.svg` — dataflow diagram output (generated); embed this path in the dev note
 
@@ -469,7 +468,7 @@ If a proposed task has no meaningful logic and won't make for a good interview s
 
 ### Gate 1 in autonomous mode
 
-Gate 1 is **skipped**. Agent writes the requirement at Step 1 directly. A practice notebook is created instead (see Autonomous Practice Notebook section).
+Gate 1 is **skipped**. Agent writes the requirement at Step 1 directly. No learning artifact is created during the run — Monireach studies completed tasks afterwards via `/guided-explore task: <slug>` (Completed-Task Debrief mode), which generates practice notebooks on demand.
 
 ---
 
@@ -499,32 +498,11 @@ Saved co-located with the dev note:
 
 ---
 
-## Autonomous Mode — Practice Notebook
+## Autonomous Mode — Learning Handoff
 
-**Trigger:** Every atomic backend/devops task in autonomous mode (Gate 1 and Gate 2 are skipped).
+Engineering and learning logic are fully separated (owner decision 2026-06-12). Autonomous runs create NO learning artifacts — no practice notebooks, no owner notes. The dev notes (Steps 0–7 records) are engineering records and remain mandatory; they double as the raw material for learning later.
 
-**Purpose:** Replace the interactive gates with pre-built learning material Monireach works through when he returns.
-
-### What to create
-
-File: `archive/development_notes/YYYYMMDD_feature_name/task_name.ipynb`
-
-Contents (per notebook):
-- **Section 1 — What was built:** 2–3 sentences describing the task, what changed, and how it fits the system.
-- **Section 2 — Key concepts (3–5 total):** For each concept:
-  - Name + one-sentence explanation
-  - The actual code from the task (as a code cell)
-  - A "fill in the logic" exercise: skeleton with `# TODO` comments, expected output shown
-  - One assertion the filled-in cell must pass
-- The notebook must be runnable — import only standard library or already-installed packages.
-
-### Reporting
-
-After creating the notebook, include in the task's chat summary:
-```
-Practice notebook → archive/development_notes/YYYYMMDD_feature_name/task_name.ipynb
-Concepts: [concept 1], [concept 2], [concept 3]
-```
+After the session, Monireach studies the tasks he chooses via `/guided-explore task: <slug>` (Completed-Task Debrief mode), which loads the dev note + diff + AC block and generates a practice notebook on demand. The session's final report should end with one line listing the completed task slugs as debrief candidates.
 
 ---
 
@@ -533,7 +511,7 @@ Concepts: [concept 1], [concept 2], [concept 3]
 - ❌ Skipping task classification
 - ❌ Dumping Steps 0–3b as chat text in backend/devops mode — write the file first, summarize in one line each
 - ❌ Enforcing Steps 4–7 on declarative tasks — there is no behavior to test
-- ❌ Moving past a checkpoint without Monireach's approval (exception: autonomous vibe-code mode — use `claude -p` gate at Step 7, write practice notebook instead of Gate 2)
+- ❌ Moving past a checkpoint without Monireach's approval (exception: autonomous vibe-code mode — use the `adversarial-verifier` subagent gate at Step 7; Gate 2 is skipped, learning happens via `/guided-explore` debrief)
 - ❌ Explaining concepts not needed for the current step
 - ❌ Spending time on tasks with no career or business value without flagging it
 - ❌ Writing code without running it to verify (Red/Green must be confirmed, not assumed)

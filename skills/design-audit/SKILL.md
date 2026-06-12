@@ -1,7 +1,7 @@
 ---
 name: design-audit
 description: Use when the user invokes "/design-audit". The single design-judgment engine — audits a codebase against PRODUCT_SPEC.md through enumerated passes (lifecycle/drift + ERD + unused-entity, authz/BOLA, state-machine, journey-failure, seam, completeness critic, journey trace). Never an open-ended "find flaws" prompt; every item gets a forced verdict ok | flaw | undecided with file:line evidence. Read-only on source code — findings are reported, never applied. Called at spec birth by /product-spec, manually mid-development, and by /vibe-code on diffs.
-version: 1.2.0
+version: 1.3.0
 ---
 
 # /design-audit — Enumerated Design Audit
@@ -24,7 +24,7 @@ You are now operating as a design auditor. Your job is to find where the code an
 
 **Implemented passes (this version):** Pass 1 (lifecycle/drift + ERD + unused-entity), Pass 2 (authz/BOLA), Pass 3 (state-machine), Pass 4 (journey-failure), Pass 5 (seam), Pass 6 (completeness critic), and the journey trace. Passes 2–5 are **conditional sweeps** — each fires only when its applicability gate matches the project (see each pass); when a gate does not fire, record `consciously skipped — <trigger> absent` and move on. Never run a sweep whose gate is absent (that manufactures noise — e.g. an authz sweep on a single-user script with no protected resources).
 
-**Execution path (this version):** degraded sequential — passes run one-by-one in this session, with a single verification pass over findings. A parallel multi-agent path (sub-agent fan-out per component, one fresh context each, compressed structured returns) with adversarial refuters is a later-stage addition, trigger-gated on a project large enough to overflow a single session. Passes 5 (seam) and 4 (journey-failure) are the ones that benefit most from that path, because a seam spans two components and a single sequential reader can miss the cross-component half; until then they run on what a single session can hold, and that bound is stated in the report. The sequential path is not a failure mode; it is the default that always works.
+**Execution paths (this version):** TWO are implemented. (1) **Sequential** — passes run one-by-one in this session, with a single verification pass over findings; the default that always works, and the ONLY path for `--scope=diff` and `--scope=phase` (a small diff gains nothing from fan-out). (2) **Parallel (Workflow)** — for `--scope=full` audits: passes fan out as concurrent Workflow agents with a synthesis stage; see the Parallel Execution Path section. Use parallel when scope is full AND the Workflow tool is available; fall back to sequential otherwise and say so in the report. Passes 5 (seam) and 4 (journey-failure) benefit most from the parallel path, because a seam spans two components and a single sequential reader can miss the cross-component half; in sequential mode that bound is stated in the report.
 
 ## Inputs
 
@@ -166,7 +166,7 @@ for each seam:
   verdict per seam: ok | flaw | undecided + file:line
 ```
 
-This is the pass most exposed to the single-session blind spot: a seam straddles two components, so a sequential reader holding only one side can miss the other half. State that bound in the report when the codebase is too large to hold both sides at once; this is the pass the parallel multi-agent path (run on the assembled component summaries, not raw code) is built to strengthen.
+This is the pass most exposed to the single-session blind spot: a seam straddles two components, so a sequential reader holding only one side can miss the other half. In sequential mode, state that bound in the report when the codebase is too large to hold both sides at once. In the parallel path, this pass runs on the assembled component summaries from the scout stage (not raw code), which is exactly what it needs.
 
 ---
 
@@ -195,6 +195,22 @@ The marker is evidence a trace passed, not a flag to flip. Downstream tooling co
 
 ---
 
+## Parallel Execution Path (Workflow — `--scope=full` only)
+
+This section is the explicit instruction that authorizes calling the **Workflow tool**. Gate: scope is `full`, code exists (not greenfield), and the Workflow tool is available. Any other case → sequential path.
+
+Workflow script shape (three stages):
+
+1. **Scout stage (sequential, in-script first):** one agent builds the shared inputs every pass needs — the entity list, the actor list, the journey list from the spec, and per-component summaries (the seam pass consumes these instead of raw code). Cheap, and it prevents N agents re-deriving the same enumerations divergently.
+2. **Pass fan-out (parallel):** one agent per applicable pass — Pass 1 (lifecycle/drift/ERD/unused-entity), and Passes 2–5 each ONLY if its applicability gate fires (gates are evaluated in the scout stage; a skipped gate is recorded, never fanned out). Pass 6 (completeness critic) runs as its own fresh agent — its independence requirement is native here. Each agent receives: its pass section from this skill verbatim, the scout outputs, and a structured-output schema (`{items: [{id, category, verdict, evidence, severity?}]}`) so returns are mergeable without parsing prose.
+3. **Synthesis stage (barrier — genuinely needs all results):** dedup findings that two passes surfaced (same file:line + same defect → keep the higher-severity one, cross-reference the categories), then assemble the standard report. The barrier is justified: dedup requires the full result set.
+
+**Optional refuter panel (when the user asked for a thorough/pre-release audit):** for each `flaw` finding, fan out 3 adversarial refuters with distinct lenses (does the evidence hold at that file:line? is there a mitigating layer elsewhere — middleware, decorator, dead-letter path? does the spec actually require this?). A finding survives only if ≥2 of 3 fail to refute it; refuted findings become `undecided` with the refutation noted — never silently dropped. This kills plausible-but-wrong findings before they reach the owner.
+
+Everything else is unchanged: read-only invariant, forced verdicts, owner approval per finding, epistemic contract. The report must state which path ran.
+
+---
+
 ## Output Discipline
 
 **Forced verdict per enumerated item:** `ok | flaw | undecided` + file:line evidence. `undecided` is mandatory in the vocabulary — without it, uncertainty gets silently rounded to ok or flaw. The single verification pass re-checks each `flaw` against its evidence once; anything that doesn't conclusively hold becomes `undecided`, never silently dropped.
@@ -208,7 +224,7 @@ Severity anchors: CRITICAL = exploitable / data loss; HIGH = product story broke
 
 `undecided` items are presented as **questions to the owner, never as tasks** — they are an epistemic state, not a severity.
 
-**Epistemic contract (state at the top of every report):** this audit guarantees that no flaw of an *enumerated class* survives the passes that ran; it cannot guarantee flaws outside the enumeration — a missing entity has no cells to visit. Mitigations: journeys-from-stranger, the spec's dual generation, Pass 6. Also state, per pass: which ran, which were **consciously skipped because their applicability gate was absent**, and which **execution paths are not yet implemented** (the parallel multi-agent / refuter path, hook integration). A skipped-gate pass is not the same as an unimplemented one — never conflate them, so coverage is never overstated.
+**Epistemic contract (state at the top of every report):** this audit guarantees that no flaw of an *enumerated class* survives the passes that ran; it cannot guarantee flaws outside the enumeration — a missing entity has no cells to visit. Mitigations: journeys-from-stranger, the spec's dual generation, Pass 6. Also state, per pass: which ran, which were **consciously skipped because their applicability gate was absent**, which **execution path ran** (sequential or parallel, refuter panel or not), and which capabilities **are not yet implemented** (hook integration, consumer mode). A skipped-gate pass is not the same as an unimplemented one — never conflate them, so coverage is never overstated.
 
 ---
 
@@ -218,7 +234,7 @@ For a documentation engagement on a completed project (usually called by /produc
 
 **Write `FINDINGS.md` with these sections, in order:**
 
-1. **Epistemic-contract header** — which passes ran, which were skipped, and WHY each was skipped (gate absent vs not-yet-implemented). State per pass: Pass 1 (lifecycle/ERD/unused-entity) and Pass 6 (completeness) always run; Passes 2–5 (authz/state-machine/journey-failure/seam) run when their applicability gate fires and are recorded `consciously skipped — <trigger> absent` otherwise. The parallel multi-agent + adversarial-refuter execution path is not yet implemented — if the codebase was too large to hold a seam's two sides in one session, say the seam pass ran degraded. Always include the enumerated-class guarantee statement. Coverage is never overstated.
+1. **Epistemic-contract header** — which passes ran, which were skipped, and WHY each was skipped (gate absent vs not-yet-implemented). State per pass: Pass 1 (lifecycle/ERD/unused-entity) and Pass 6 (completeness) always run; Passes 2–5 (authz/state-machine/journey-failure/seam) run when their applicability gate fires and are recorded `consciously skipped — <trigger> absent` otherwise. State which execution path ran (sequential or parallel Workflow — archaeologist engagements are full-scope, so the parallel path applies when the Workflow tool is available); if the seam pass ran sequentially on a codebase too large to hold both sides of a seam, say it ran degraded. Always include the enumerated-class guarantee statement. Coverage is never overstated.
 2. **Reconnaissance** (this section is created by /product-spec archaeologist mode's Phase 0 — if it already exists in the file, APPEND to the file below it; if running standalone without that phase, write a one-line note that reconnaissance was not performed). It holds the docs trust-audit table (current/stale/wrong/unverifiable) + convention findings.
 3. **Findings table** — literal headers, never reworded:
    ```
@@ -258,7 +274,8 @@ After a process lapse (phases shipped without traces, spec not updated spec-firs
 - Do NOT round `undecided` to ok or flaw — uncertainty is reported as uncertainty.
 - Do NOT overstate coverage — name the passes that ran and the ones that didn't.
 - Do NOT run a Pass 2–5 sweep whose applicability gate is absent — record `consciously skipped — <trigger> absent`; running it anyway manufactures noise.
-- Do NOT improvise hook integration or the parallel multi-agent / refuter execution path — those remain declared future stages. (Passes 1–6 and archaeologist mode ARE implemented; consumer mode is NOT.)
+- Do NOT improvise hook integration — it remains a declared future stage. (Passes 1–6, archaeologist mode, and the parallel Workflow / refuter execution path ARE implemented; consumer mode is NOT.)
+- Do NOT use the parallel Workflow path for `--scope=diff` or `--scope=phase` — a small scope gains nothing from fan-out; sequential is correct there.
 - Do NOT mix the findings table and the undecided table in archaeologist mode — they are separate; undecided is an epistemic state, not a severity.
 - Do NOT reference any file outside this skill's own directory in instructions you emit — this skill must work on any machine it travels to.
 

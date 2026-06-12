@@ -19,3 +19,4 @@ CONCEPTS LEARNED:
 5. Why use body.score instead of message.user_feedback in FeedbackResponse return: message.user_feedback is typed int | None (nullable column), which conflicts with FeedbackResponse.score: Literal[-1, 1]. body.score is already Pydantic-validated as Literal[-1, 1] and was just written to DB, so it's guaranteed correct.
 
 6. REST API sub-resource suffix pattern: /feedback/user and /feedback/tenant as separate endpoints instead of a single endpoint with a discriminator body field. Each maps to one field on the Message model (user_feedback, tenant_feedback). Cleaner separation of concerns, each actor owns their endpoint.
+
