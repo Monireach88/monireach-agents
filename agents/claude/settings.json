@@ -28,18 +28,6 @@
           }
         ]
       }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$HOME/.claude/hooks/loop-stop-gate.sh\"",
-            "timeout": 15,
-            "statusMessage": "loop-dev: checking remaining tasks"
-          }
-        ]
-      }
     ]
   },
   "statusLine": {

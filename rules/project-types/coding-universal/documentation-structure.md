@@ -125,7 +125,17 @@ Rules:
 ### Rules
 
 - **Checklist first, details below** — the task list must be scannable in seconds; details live in named subsections underneath
-- **Every task has a detail section** — a task with no details is ambiguous; a future Claude session cannot act on it
+- **Every task has a detail section** — a substantive task with no details is ambiguous; a future Claude session cannot act on it. (Trivial one-liner backlog items — a single self-explanatory sentence — may live as a checklist entry alone.)
+- **Checklist ↔ details are bidirectional — no orphan detail sections** — every `### 🔲/🔄 Task Name` detail section MUST have a matching one-line `- 🔲/🔄 Task Name` entry in the checklist above it. Adding a detail section without first adding its checklist line is a violation (this is the most common failure: writing the detail and forgetting the list entry above). The checklist is the index; a detail with no index entry is invisible when scanning the task list. When you add any detail section, add its checklist line in the SAME edit. Verify both directions with:
+  ```bash
+  # Run inside current_state/ — lists any detail section with no checklist entry anywhere above (must be empty).
+  # NOTE: emoji symbols are matched with grep -E alternation (🔲|🔄|✅), NEVER an awk bracket class
+  # like [🔲🔄] — awk splits multibyte emoji into bytes and silently matches nothing.
+  # Whole-file scan (not one section): V1/V2 checklists live under `### Phase N` headings, not a "Backlog" header.
+  grep -E '^- (🔲|🔄|✅) '   project_status.md | sed -E 's/^- (🔲|🔄|✅) //; s/ \(.*//'                 | sort -u > /tmp/cl.txt
+  grep -E '^#{3,4} (🔲|🔄|✅) ' project_status.md | sed -E 's/^#{3,4} (🔲|🔄|✅) //; s/ \(.*//; s/ \*\(.*//' | sort -u > /tmp/dt.txt
+  comm -13 /tmp/cl.txt /tmp/dt.txt   # any output = orphan detail section → add its checklist line
+  ```
 - **No floating prose** — decisions, constraints, and notes belong inside a task's detail section, not as standalone paragraphs between tasks
 - **No orphan sections** — do not leave standalone sections like "Key Decisions" or "Auth Flow" floating at the bottom; fold their content into the relevant task detail sections
 - **Symbol on every task** — 🔲 (not started), 🔄 (in progress), ✅ (done, then moved to milestone.md), 🔲 (post-version backlog)

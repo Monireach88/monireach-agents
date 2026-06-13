@@ -152,6 +152,7 @@ When user says "end session":
    - Only update files relevant to today's work
    - **After updating any status file:** grep for the completed task name (case-insensitive, shortest distinctive keyword) across the **entire file** — every `🔲` next to that name must become `✅`, regardless of which section it appears in. Do not limit the grep to "active task" or "backlog" sections only. Symbols alone (🔲, 🔄, ✅) are not enough; a task can appear in plain text with no symbol.
    - **Symbol rule:** every task entry in `project_status.md` must carry a symbol (✅, 🔄, or 🔲). Never leave a task name without a symbol — a symbolless task is invisible to search and will be missed.
+   - **Orphan-detail rule:** whenever you add a `### 🔲/🔄 Task Name` detail section, add its matching one-line `- 🔲/🔄 Task Name` entry to the checklist above in the SAME edit (`documentation-structure.md` §10.3, bidirectional invariant). Before finishing, run the §10.3 `comm -13` orphan-detail check — any output is a detail section with no checklist line; fix it now.
    - **Completed tasks → milestone.md:** at end-session, any `### ✅` detail section still in `project_status.md` must be archived using the atomic sequence in **§2.6**. This should be rare — §2.6 fires mid-session when a task completes, so end-session is just a safety net.
 
 3. **Update PROJECT.md (if applicable):**
