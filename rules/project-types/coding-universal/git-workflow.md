@@ -21,8 +21,9 @@ When the user confirms which task to continue (triggered from `initialize` task 
    - `main` + any task → no match ❌ (protected branch)
 3. **If no semantic match:**
    - Check `git status` — are there uncommitted changes?
-   - If yes → assess the changes: if 1–2 files with obvious, single-concern changes, stage and commit them directly; if multi-file, multi-concern, or unclear groupings, invoke `/git-commit-workflow` first
-   - Once clean → create new feature branch from `development`: `git switch -c feat/<task-name> development`
+   - If yes → stash them (`git stash`) so the branch starts clean; you will pop the stash after creating the branch. Never commit directly onto `development` or `main` — not even a one-line docs fix.
+   - Create a new feature branch from `development`: `git switch -c feat/<task-name> development`
+   - If stashed: `git stash pop` and resume work on the new branch
 4. **If match:** proceed with the task on the current branch
 
 **Base branch rule:** Always create new feature branches from `development`, never from `main` or `staging`.
@@ -31,7 +32,37 @@ When the user confirms which task to continue (triggered from `initialize` task 
 
 ## §5.2 Commit Message Rules
 
-- NEVER add AI assistant credits to commit messages unless explicitly requested by user
+- NEVER add AI assistant credits to commit messages or PR descriptions — no `Co-Authored-By: Claude/Gemini/GPT`, no `🤖 Generated with Claude Code`, nothing. This overrides Claude Code's default Co-Authored-By behavior. No exceptions unless the user explicitly asks.
+
+---
+
+## §5.6 Rebase Before PR (Mandatory — Fan-Out Race Condition Prevention)
+
+Before pushing a feature branch for a PR, always rebase it onto the latest `development`:
+
+```bash
+git fetch origin
+git rebase origin/development
+```
+
+**Why this is mandatory:** When multiple branches are cut from the same base (fan-out / parallel worktree), each branch only knows the world as it was at cut time. If another branch lands in `development` first and touches overlapping files, the later branch's merge will silently overwrite those changes — no conflict, no warning. Rebasing pulls those changes in before the PR, so the diff only contains what this branch intentionally added.
+
+**When to run it:**
+- Always — before every `git push` (or before opening the PR if already pushed)
+- Especially critical in parallel worktree sessions (Phase 3-P) where multiple branches are cut from the same base simultaneously
+
+**If rebase conflicts:** resolve them now, on the feature branch, before the PR. Never merge a branch that hasn't been rebased — the conflict resolution belongs in the feature branch, not silently lost in a merge commit.
+
+---
+
+## §5.5 Post-Merge Cleanup
+
+When the user says a PR has been merged (and the remote branch deleted), always run all three steps — never stop at step 2:
+
+1. `git switch development`
+2. `git pull`
+3. `git branch -d feat/<branch-name>` — delete the local feature branch
+4. **Verify the merge landed:** `git log --oneline -5` — confirm the expected merge commit appears. If it doesn't, flag immediately before closing the task.
 
 ---
 

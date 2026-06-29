@@ -43,8 +43,8 @@ Invoking `/vibe-code` activates **fully autonomous operation**.
 Every atomic task runs on its own feature branch. This is non-negotiable.
 
 **Before starting each atomic task:**
-1. Run `git checkout development && git pull` — always branch from a fresh `development`
-2. Create: `git checkout -b feature/<task-slug>` (e.g. `feature/chromadb-readiness-check`)
+1. Run `git fetch origin` — sync remote state without touching local branches
+2. Create: `git checkout -b feature/<task-slug> origin/development` (e.g. `feature/chromadb-readiness-check`) — always branch from `origin/development`, never from local `development`
 3. **IMMEDIATELY write the dev notes file skeleton** — this is the FIRST tool call after branch creation, before reading any source file:
    - Backend/devops: `Write("archive/development_notes/YYYYMMDD_feature/task.md", "# TaskName\n\n## Step 0\n## Step 1\n...")`
    - Frontend: same path, lightweight format
@@ -56,13 +56,16 @@ Every atomic task runs on its own feature branch. This is non-negotiable.
 4. Verify required task record is complete (backend/devops: full dev note; frontend: lightweight frontend dev note)
 5. Run the independent assessment (see Step 7: the `adversarial-verifier` subagent) — if FAIL, apply its REQUIRED_FIXES and re-run Step 7 before proceeding; if the subagent is unavailable (agent file missing), apply the self-review fallback defined in Step 7
 6. Stage and commit all changes on the feature branch
-7. Merge into development and delete the feature branch: `git checkout development && git merge feature/<task-slug> && git branch -d feature/<task-slug>`
-8. Immediately create the next feature branch from `development` and continue — do not pause or wait
+7. Push the feature branch and open a PR: `git push -u origin feature/<task-slug>` then `gh pr create --base development --head feature/<task-slug>` — **never merge into local `development`**
+8. For the next task: run `git fetch origin` and branch from `origin/development` again (`git checkout -b feature/<next-slug> origin/development`)
+   - If the previous PR has already been merged: `origin/development` includes that work — the next task builds on it naturally
+   - If the previous PR is still open: the next task is independent and branches from the current `origin/development` state; tasks that depend on the unmerged PR must wait for it to be merged before starting
 
 **Rules:**
 - Never work directly on `development`, unless Monireach explicitly instructs it
-- Only merge after: (a) all tests pass AND (b) the `adversarial-verifier` subagent returns PASS, OR (b′) subagent unavailable and self-review passes
-- Do not wait for Monireach between feature branches — switch and continue autonomously
+- Never merge a feature branch into local `development` — this creates divergence when `development` is push-protected (the local commits get different SHAs than the cherry-picks created during PR creation, causing `git pull` to fail with "divergent branches")
+- Only create the PR after: (a) all tests pass AND (b) the `adversarial-verifier` subagent returns PASS, OR (b′) subagent unavailable and self-review passes
+- Do not wait for Monireach between independent feature branches — push the PR and start the next task autonomously
 
 ---
 
@@ -76,10 +79,10 @@ When multiple independent atomic tasks exist in a session, vibe-code can run the
 - Implementation and verification happen only inside that worktree.
 
 **Workflow (per independent task):**
-1. `git worktree add ~/projects/<repo>_<feature_slug> -b feature/<feature_slug>` — Git creates the directory.
+1. `git fetch origin && git worktree add ~/projects/<repo>_<feature_slug> -b feature/<feature_slug> origin/development` — Git creates the directory, branching from `origin/development`.
 2. All work runs inside `~/projects/<repo>_<feature_slug>` only.
-3. After review: `git checkout development && git merge feature/<feature_slug>` — merge one at a time.
-4. Cleanup: `git worktree remove ~/projects/<repo>_<feature_slug>` then `git branch -d feature/<feature_slug>`.
+3. After review: `git push -u origin feature/<feature_slug>` then `gh pr create --base development --head feature/<feature_slug>` — merge via PR on GitHub; do NOT merge into local `development`.
+4. Cleanup after the PR is merged: `git worktree remove ~/projects/<repo>_<feature_slug>` then `git branch -d feature/<feature_slug>`.
 
 **Naming convention:** `~/projects/<repo>_<feature_slug>` (e.g. `~/projects/smart_chatbot_is-blocked-column`).
 

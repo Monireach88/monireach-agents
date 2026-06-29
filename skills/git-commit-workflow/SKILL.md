@@ -1,6 +1,6 @@
 ---
 name: git-commit-workflow
-description: Stage, commit, and optionally merge/push changes — with explicit user confirmation at each step.
+description: Stage, commit, push a feature branch, and open a PR into development — with explicit user confirmation at each step.
 version: 1.0.0
 ---
 
@@ -8,12 +8,12 @@ version: 1.0.0
 
 **Trigger:** User invokes `/git-commit-workflow` or `/git-commit-workflow --auto`
 
-**Purpose:** Stage, commit, and optionally merge/push changes — with explicit user confirmation at each step. Replaces the TTY-based git hooks that blocked Agent from running `git commit` directly.
+**Purpose:** Stage, commit, push a feature branch, and open a PR into `development` — with explicit user confirmation at each step. Feature branches reach `development` ONLY via a merged PR; this skill never merges into a protected branch locally. (A local `pre-push` hook also blocks direct pushes to `development`/`main`.)
 
 **Flags:**
 
-- _(no flag)_ — default mode: confirmation required at each step (Phase 3, each commit, push, merge, push dev)
-- `--auto` — autonomous mode: skip ALL confirmations; execute the full workflow end-to-end without waiting (commits → push feature → merge to development → push development → return to feature branch)
+- _(no flag)_ — default mode: confirmation required at each step (Phase 3, each commit, push, open PR, merge PR)
+- `--auto` — autonomous mode: skip ALL confirmations; execute end-to-end (commits → push feature → open PR → wait for CI green → merge PR → sync `development`)
 
 **Rules enforced natively (no hooks needed):**
 
@@ -32,10 +32,11 @@ When invoked as `/git-commit-workflow --auto`:
 3. Run **Phase 2** (generate commit plan) — same as default
 4. **Phase 3**: Display the commit plan in chat (so the user can see what ran), then **proceed immediately without asking**
 5. **Phase 4**: Execute all commits in order without per-commit confirmation; push feature branch automatically
-6. **Phase 5**: Merge to `development` with `--no-ff` automatically; push `development` automatically; return to feature branch
-7. Print a final summary: all commits made, push status, merge status
+6. **Phase 5**: Open the PR automatically (`gh pr create --base development --fill`)
+7. **Phase 6**: Wait for CI on the PR (`gh pr checks <pr> --watch`); when all checks pass, merge (`gh pr merge <pr> --squash --delete-branch`) and sync `development`
+8. Print a final summary: commits made, push status, PR URL, merge status
 
-If a **merge conflict** occurs in Phase 5: stop, report the conflict, return to feature branch — this always requires human resolution regardless of flag.
+If **CI fails** in Phase 6: stop, report the failing checks, leave the PR open — `--auto` NEVER merges a red PR. If a **merge conflict** is reported by GitHub: stop and report — conflict resolution always requires a human regardless of flag.
 
 ---
 
@@ -144,32 +145,58 @@ After all commits complete: confirm "All [N] commits done. On branch `<branch>`.
 
 Then use **AskUserQuestion** (Yes/No): "Push `<feature-branch>` to remote? (`git push -u origin <feature-branch>`)"
 
-- **If Yes:** `git push -u origin <feature-branch>`
-- **If No:** skip, proceed to Phase 5
+- **If Yes:** `git push -u origin <feature-branch>`, then proceed to Phase 5
+- **If No:** stop here — a PR requires the branch on the remote, so Phase 5 cannot run. Report: "Feature branch not pushed; no PR opened."
 
 ---
 
-## Phase 5: Merge to Development
+## Phase 5: Open Pull Request
 
-Use **AskUserQuestion** (Yes/No): "Merge `<feature-branch>` to `development` now?"
+The feature branch is pushed. Protected branches change only via a merged PR, so this phase opens one instead of merging locally.
 
-**If No:** Done. Stay on feature branch.
+Use **AskUserQuestion** (Yes/No): "Open a PR `<feature-branch>` → `development` now?"
+
+**If No:** Done. Branch is pushed; report "No PR opened — open one later with `gh pr create --base development`."
 
 **If Yes:**
 
-1. `git switch development`
-2. `git merge --no-ff <feature-branch>`
-   - If merge conflict → stop, report conflict details, return to feature branch: `git switch <feature-branch>`
-3. Use **AskUserQuestion** (Yes/No): "Push development to remote? (`git push -u origin development`)"
-4. **If Yes:** `git push -u origin development`
-5. **If No:** skip push
-6. `git switch <feature-branch>` — always return to feature branch after this phase
+1. Create the PR:
+   ```
+   gh pr create --base development --head <feature-branch> --fill
+   ```
+   `--fill` seeds title/body from the commits. For a dense change, replace `--fill` with explicit `--title`/`--body` summarizing what and why.
+2. Report the PR URL.
+3. Proceed to Phase 6.
+
+---
+
+## Phase 6: Merge the PR (CI-gated)
+
+This repo has no server-side required checks (private repo, free plan), so the skill enforces the CI gate itself: **never merge a PR whose checks are not green.**
+
+Use **AskUserQuestion** (Yes/No): "Merge PR #<n> once CI is green?"
+
+**If No:** Done. Leave the PR open.
+
+**If Yes:**
+
+1. Check CI: `gh pr checks <pr>` (or `gh pr checks <pr> --watch` to wait for completion).
+   - **Any check failing or pending →** do NOT merge. Report status; stop until green.
+2. When all checks pass, merge and delete the remote branch:
+   ```
+   gh pr merge <pr> --squash --delete-branch
+   ```
+3. Sync local `development` and remove the local feature branch:
+   ```
+   git switch development && git pull
+   git branch -d <feature-branch>
+   ```
 
 ---
 
 ## Merge Strategy
 
-Always use `--no-ff` (no fast-forward). This preserves branch history and makes it clear when a feature was merged.
+Merge PRs with **`--squash`** — each feature becomes one clean commit on `development`. Never merge a feature branch into `development` locally; the merge happens on GitHub via the PR (and the `pre-push` hook blocks a local push to `development` anyway).
 
 ---
 
@@ -182,7 +209,8 @@ Always use `--no-ff` (no fast-forward). This preserves branch history and makes 
 | 2     | Generate commit plan                      | None                                 | None                              |
 | 3     | Present plan                              | Yes / No / Chat                      | Display only, proceed immediately |
 | 4     | Execute each commit + push feature branch | Yes / No per commit, Yes / No (push) | Automatic                         |
-| 5     | Merge + push to development               | Yes / No (merge), Yes / No (push)    | Automatic                         |
+| 5     | Open PR into `development`                | Yes / No                             | Automatic (`gh pr create`)        |
+| 6     | Merge PR (only when CI green) + sync dev  | Yes / No (after green)               | Wait for green, then merge        |
 
 > **Note:** Merging `development → main` is a separate, intentional release decision.
 > Use `/git-release-workflow` when you are ready to release everything in `development` to production.

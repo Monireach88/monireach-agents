@@ -13,6 +13,8 @@ This project is built for three simultaneous goals:
 
 Learning and career ROI are first-class goals. Do not recommend shortcuts when a proper standard solution is practical and bounded.
 
+**Hard rules for portfolio projects:** Never offer a shortcut when a standard solution exists. There is only one option: the standard. Phrases like "OK for now," "acceptable for V1," or "upgrade later" are forbidden when the correct approach is known and buildable. Never say "NO" when you mean "not yet — when X happens, do Y."
+
 ## Working Model
 
 - Verify facts from the repo before making claims about what is built.
@@ -88,14 +90,37 @@ docker exec chatbot_backend_dev uv run pytest tests -rAq --tb=no
 - `alembic/AGENTS.md` contains shared migration workflow rules.
 - `nginx/AGENTS.md` contains shared deployment and infra rules.
 
-## Claude Rule Bridge For Hermes
+## Git Workflow
 
-Hermes should not ingest every Claude rule file into memory or every prompt. When a task is affected by Claude-specific standards, inspect the relevant files in `.claude/rules/` or the shared rule mount before acting.
+- Feature branches from `development`. Never commit directly to `development` or `main`.
+- Atomic task branch check: before starting work, verify current branch semantically matches the task. If not, stash uncommitted changes, create `feat/<name>` from `development`, pop stash.
+- Commit format: `type: concise subject` — types are `fix:`, `feat:`, `refactor:`, `docs:`, `chore:`.
+- Never add AI assistant credits to commit messages or PR descriptions.
+- After PR merge: `git switch development`, `git pull`, `git branch -d feat/<name>`.
+- After every task, ask: "Would this work on a fresh machine with only committed files?" If no → close the loop before marking the task done.
 
-Use this bridge especially for:
+## User Confirmation
 
-- session initialization and end-session workflows
-- documentation and logging workflows
-- testing command selection
-- backend, frontend, UX, DevOps, or migration standards
-- user confirmation rules for commits, pushes, destructive actions, and deployments
+- **Never commit without user confirmation** — wait for "OK", "yes", "commit it", etc. Exception: `/vibe-code` sessions pre-approve all commits.
+- Never push to any remote without confirmation.
+- Never run destructive commands (`rm`, `sudo`, database drops, production deploys) without approval.
+- Never delete files or directories without confirmation.
+
+## Python Dependencies
+
+Always use `uv add` / `uv remove` — never edit `pyproject.toml` by hand:
+- `uv add "pkg>=version"` — adds to pyproject.toml, updates uv.lock, installs
+- `uv remove pkg` — removes from pyproject.toml, updates uv.lock, uninstalls
+- Never use `uv pip install` as a substitute for `uv add`
+
+## Cross-Project Issues
+
+When a bug originates in a different repo: **never edit, create, or delete files in the other repo** — not even a one-line fix. Append a note to that repo's `archive/crucial_notes.md` with the bug, root cause, and fix. Use `🔲 (PRIORITY) description` markers for actionable items. Only make changes when the user explicitly asks to switch repos.
+
+## Project-Type Standards
+
+When working on backend tasks, read `.claude/rules/backend-standards.md`.
+When working on frontend tasks, read `.claude/rules/frontend-standards.md`.
+When working on DevOps tasks, read `.claude/rules/devops-standards.md`.
+
+Read these on-demand in their respective domains — not all at session start.

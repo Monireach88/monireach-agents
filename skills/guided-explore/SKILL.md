@@ -1,7 +1,7 @@
 ---
 name: guided-explore
-description: Use this skill when the user invokes "/guided-explore" or natural phrases like "walk me through", "let's explore together", "help me understand X as we go". Activates a session-wide mentoring mode — I investigate first, surface ONE blocker at a time, and guide Monireach Socratically based on his stated confidence level. No code changes unless a bug occurs. Also owns Completed-Task Debrief mode (`/guided-explore task: <slug>` or `/guided-explore debrief`) — post-hoc study of tasks completed by /vibe-code or /loop-dev, including on-demand practice-notebook generation.
-version: 1.1.0
+description: "Use this skill when the user invokes '/guided-explore' or natural phrases like 'walk me through', 'let's explore together', 'help me understand X as we go'. Activates a session-wide mentoring mode — I investigate first, surface ONE blocker at a time, and guide Monireach Socratically based on his stated confidence level. No code changes unless a bug occurs. Also owns Completed-Task Debrief mode ('/guided-explore task: <slug>' or '/guided-explore debrief') — post-hoc study of tasks completed by /vibe-code or /loop-dev, including on-demand practice-notebook generation."
+version: 1.2.0
 ---
 
 # Guided Explore
@@ -161,6 +161,13 @@ When the user provides a graph/diagram file at session start:
 - Convention: user provides the file path at activation, e.g.: `/guided-explore "deployment" confidence: low graph: /path/to/diagram.png`
 
 No code changes needed to the skill — this is a convention, not a mechanism.
+
+---
+
+## Reference Files
+
+- `references/cloudflare-526-github-pages.md` — Symptom, root cause, diagnosis steps, and fix for Cloudflare 526 when GitHub Pages is the origin. Covers ACME HTTP-01 challenge blockage and gray-cloud vs. Flexible SSL tradeoffs.
+- `references/cloudflare-github-pages-tls.md` — Two-hop TLS model, SSL mode trade-offs table, quick diagnostic flow diagram, and one-time fix pattern for the same problem. Use as a rapid-reference companion to the full diagnosis file above.
 
 ---
 

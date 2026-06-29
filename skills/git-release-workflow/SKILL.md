@@ -1,14 +1,14 @@
 ---
 name: git-release-workflow
 description: Safely release development to main with a mandatory pre-flight checklist.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Git Release Workflow
 
 **Trigger:** User invokes `/git-release-workflow`
 
-**Purpose:** Safely release `development → main` with a mandatory pre-flight checklist. Merging to main is a production deployment decision — not just a git operation. This skill enforces a go/no-go gate before any code touches main.
+**Purpose:** Safely release `development → main` with a mandatory pre-flight checklist. Merging to main is a production deployment decision — not just a git operation. This skill enforces a go/no-go gate before any code touches main. The release is performed via a PR (`development → main`) merged on GitHub — never a local push to `main` (the `pre-push` hook blocks that anyway).
 
 **Rules enforced natively:**
 
@@ -17,23 +17,45 @@ version: 1.0.0
 
 ---
 
-## How to adapt this skill to a new project
+## Project discovery
 
-The **8 checklist categories are universal** — they apply to every project, language, and framework.
+The **9 checklist categories are universal**. The commands, files, environments, and deployment surfaces are not.
 
-The **specific items within each category are project-specific.** When starting a new project, update:
+Before running the release workflow in any repo, first discover the project-specific release contract from the local codebase. Read only the files needed to answer these questions:
 
-| Item to update          | Current project                       | New project (examples)                                            |
+1. What is the authoritative test command?
+2. What branch flow is used for releases?
+3. What deploy mechanism is triggered by merging to the production branch?
+4. What migration tool and production migration command are used?
+5. Where do production secrets/config live?
+6. What is the real production URL and, if applicable, staging URL?
+7. What is the real rollback path for code, database, and infra?
+
+Primary sources to inspect when present:
+
+- `AGENTS.md`, `CLAUDE.md`, `PROJECT.md`
+- `README.md`, `DOCKER_SETUP.md`
+- `Makefile`, `package.json`, `pyproject.toml`
+- `.github/workflows/*`
+- deploy manifests such as `docker-compose*.yml`, `Dockerfile*`, `render.yaml`, `fly.toml`, `helm/`, `k8s/`, `terraform/`
+
+Do not hardcode project commands into the core workflow. Use repo-discovered values at runtime.
+
+## Project adaptation examples
+
+The table below is illustrative only. These are examples of the kinds of values that must be discovered per project:
+
+| Item to discover        | Example A                             | Example B                                                         |
 | ----------------------- | ------------------------------------- | ----------------------------------------------------------------- |
-| Test command            | `uv run pytest tests/`                | `npm test`, `go test ./...`, `cargo test`                         |
+| Test command            | `docker exec app uv run pytest tests` | `npm test`, `go test ./...`, `cargo test`                         |
 | DB migration tool       | Alembic                               | Flyway, Liquibase, Prisma migrate, Rails migrations               |
-| Secrets location        | HF Spaces secrets + `.env.production` | AWS Secrets Manager, Vercel env vars, Railway, GCP Secret Manager |
-| Compose/deploy file     | `docker-compose.prod.yml`             | `helm values.yaml`, K8s manifests, `fly.toml`, `render.yaml`      |
+| Secrets location        | `.env.production` on server           | AWS Secrets Manager, Vercel env vars, Railway, GCP Secret Manager |
+| Compose/deploy file     | `docker-compose.prod.yml`             | `helm values.yaml`, `fly.toml`, `render.yaml`                     |
 | CDN/proxy               | Cloudflare                            | AWS CloudFront, Fastly, Nginx                                     |
-| Infra tool              | Terraform (planned)                   | Pulumi, CDK, Ansible                                              |
-| Container orchestration | Docker Compose → K3s (future)         | Kubernetes, Nomad, ECS                                            |
+| Infra tool              | Terraform                             | Pulumi, CDK, Ansible                                              |
+| Container orchestration | Docker Compose                        | Kubernetes, Nomad, ECS                                            |
 
-Mark items as `N/A` if they don't apply yet, but keep them in the list — they become relevant as the project scales.
+Mark items as `N/A` if they genuinely do not apply.
 
 ---
 
@@ -46,6 +68,7 @@ Queries:
 - `git branch --show-current`
 - `git log origin/main..development --oneline` (commits not yet in main)
 - `git status`
+- `git diff origin/main..origin/development --name-only` (files changed — used for risk classification in Phase 3)
 
 ---
 
@@ -80,11 +103,40 @@ Use **AskUserQuestion** (Yes/No):
 
 ---
 
-## Phase 3: Pre-Flight Checklist
+## Phase 3: Pre-Flight Checklist (Risk-Classified)
 
-**CRITICAL: Do not skip this phase. Present the full checklist, then confirm.**
+**CRITICAL: Do not skip this phase. Every applicable section must be verified before merging.**
 
-Display this checklist verbatim:
+**Escape hatch:** If the user types "full checklist" at any point in this phase, show all 9 sections in full regardless of classification.
+
+### Step 3a — Classify the release
+
+Using the file list from Phase 0 (`git diff --name-only`), set these flags (default false):
+
+| Flag | True when the diff contains... |
+|---|---|
+| `HAS_MIGRATIONS` | any file under `alembic/versions/` |
+| `HAS_ENV_CHANGES` | `.env.example` |
+| `HAS_INFRA_CHANGES` | `docker-compose*.yml`, `Dockerfile*`, `nginx.conf`, `nginx/`, `terraform/`, `k8s/` |
+| `HAS_NEW_DEPS` | `package.json`, `pyproject.toml`, `requirements*.txt`, `uv.lock` |
+| `HAS_BACKEND_CHANGES` | any `.py` file outside `tests/` and outside `alembic/` |
+
+**Conservative rule:** When uncertain whether a file matches a pattern, set the flag to **true**. A false positive shows an extra section (harmless friction). A false negative hides a relevant section (dangerous). Never collapse a section on a guess.
+
+### Step 3b — Announce classification (one line, before the checklist)
+
+- All flags false → `Frontend-only release — showing abbreviated checklist (sections 3, 4, 6, 7 auto-skipped). Type "full checklist" to see everything.`
+- Otherwise → `Detected: [list each true flag by name]. Showing full sections for flagged categories.`
+
+### Step 3c — Present the checklist
+
+**Always show:** sections 1, 2, 5, 8, 9 — no exceptions.
+
+**Conditional sections** — show the full section when the flag is true; replace with a single skip line when false:
+- Section 3 (Configuration): `HAS_ENV_CHANGES` OR `HAS_INFRA_CHANGES` → else: `✓ 3. CONFIGURATION — auto-skipped (no .env or infra file changes detected)`
+- Section 4 (Database): `HAS_MIGRATIONS` → else: `✓ 4. DATABASE — auto-skipped (no migration files detected)`
+- Section 6 (Infrastructure): `HAS_INFRA_CHANGES` → else: `✓ 6. INFRASTRUCTURE — auto-skipped (no infra file changes detected)`
+- Section 7 (External Tools): `HAS_BACKEND_CHANGES` OR `HAS_NEW_DEPS` → else: `✓ 7. EXTERNAL TOOLS & SERVICES — auto-skipped (no backend or dependency changes detected)`
 
 ---
 
@@ -96,80 +148,80 @@ Display this checklist verbatim:
 ╚══════════════════════════════════════════════════════════════════╝
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- 1. TESTS & CI                                        [UNIVERSAL]
+1. TESTS & CI                                        [UNIVERSAL]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  □ Full test suite passes locally
-     [this project: uv run pytest tests/]
+     [use the authoritative test command discovered from the repo]
  □ No tests skipped or suppressed to force a pass
  □ CI pipeline is green on development branch
-     [this project: gh run list --branch development]
+     [use the repo's actual release branch name]
  □ Dependency audit clean — no new critical vulnerabilities
-     [this project: GitHub Dependabot — currently 1 high, 1 moderate flagged]
+     [check the project's actual dependency/security scanning surface]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- 2. STAGING PARITY                                    [UNIVERSAL]
+2. STAGING PARITY                                    [UNIVERSAL]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  □ Feature was tested on a staging environment, not just local
-     [this project: tested locally + HF Spaces dev preview]
+     [if there is no staging environment, explicitly call that out as risk]
  □ Staging config matches production config
      (no dev-only flags, no hardcoded localhost URLs)
  □ All team members' features in development have been
    integration-tested together — not just in isolation
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- 3. CONFIGURATION                                     [UNIVERSAL]
+3. CONFIGURATION                                     [UNIVERSAL]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  □ All new env vars added to production secrets store
-     [this project: .env.production + HF Spaces Secrets]
+     [use the project's actual secrets/config store]
  □ Production values are correct — verify each new var:
      - Debug mode OFF  (API_DEBUG=false)
      - Log level INFO or WARNING  (not DEBUG)
-     - CORS origins = production domains only  (not localhost, not *)
+     - CORS origins = current intended production domains only
      - API URLs = production URLs  (not smart-chatbot.local)
  □ Deploy config file updated
-     [this project: docker-compose.prod.yml]
+     [use the repo's actual deploy manifest]
  □ Reverse proxy / web server config updated for new routes
-     [this project: Nginx config if new endpoints added]
+     [Nginx / ingress / gateway / platform routing if applicable]
  □ Feature flags set correctly for production
      (new features intentionally on or off?)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- 4. DATABASE                                          [UNIVERSAL]
+4. DATABASE                                          [UNIVERSAL]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  □ Production DB backup taken BEFORE this release
-     [this project: pg_dump → store safely]
+     [use the real backup procedure for the project]
  □ All migration files reviewed:
      - upgrade() contains ONLY additive ops
        (CREATE TABLE, ADD COLUMN, CREATE INDEX)
      - upgrade() has ZERO DROP TABLE / DROP COLUMN
      - downgrade() correctly reverses the upgrade
-     [this project: alembic/versions/ — inspect each unapplied file]
+     [inspect the real migration directory/tool output]
  □ Migration plan confirmed — know exactly when and how to run
-     [this project: docker exec chatbot_backend_prod uv run alembic upgrade head]
+     [use the real production migration command]
  □ Data migrations accounted for
      (existing rows needing backfilling? transformation scripts ready?)
  □ New seed data handled
      (new required rows? seed script updated? idempotent?)
-     [this project: seed_demo_tenant() — verify it runs on startup]
+     [verify project-specific seed/bootstrap behavior]
  □ Vector DB backed up if applicable
-     [this project: ChromaDB data dir → N/A until Step 4 (RAG)]
+     [or search index / blob store / queue state backed up if applicable]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- 5. SECURITY                                          [UNIVERSAL]
+5. SECURITY                                          [UNIVERSAL]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  □ No secrets, API keys, or passwords committed to git
      (check: git log -p | grep -iE "api_key|secret|password|token")
  □ New endpoints protected by auth middleware
      (no accidental public exposure of authenticated routes)
  □ Rate limiting covers new endpoints
- □ CORS origins locked to production domains only
+ □ CORS policy matches the current production design
  □ No debug routes or test endpoints exposed in prod
  □ Input validation in place for all new user-facing fields
  □ Breaking API changes versioned correctly
      (removed/renamed endpoints will break embedded clients —
       check: portfolio widget at monireach.com still works?)
  □ Dependabot / known CVEs reviewed and consciously accepted or fixed
-     [this project: 1 high + 1 moderate currently flagged]
+     [this project: review current GitHub Dependabot / code scanning alerts before release]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  6. INFRASTRUCTURE                                    [UNIVERSAL]
@@ -194,13 +246,13 @@ Display this checklist verbatim:
      (  - New ConfigMaps / Secrets created in the correct namespace)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- 7. EXTERNAL TOOLS & SERVICES                         [UNIVERSAL]
+7. EXTERNAL TOOLS & SERVICES                         [UNIVERSAL]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  □ Third-party API keys valid and have sufficient quota
-     [this project: Groq API key — still active? rate limits OK?]
+     [check the real providers used by the project]
  □ Webhooks or integrations pointing to correct prod URLs
  □ CDN / proxy cache: purge needed for updated static assets?
-     [this project: Cloudflare cache — purge if JS/CSS/HTML changed]
+     [use the actual CDN/proxy/cache layer if one exists]
 
  Monitoring stack:
  □ Grafana dashboards updated for new metrics / endpoints
@@ -211,7 +263,7 @@ Display this checklist verbatim:
      → N/A until Prometheus is set up
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- 8. ROLLBACK PLAN                                     [UNIVERSAL]
+8. ROLLBACK PLAN                                     [UNIVERSAL]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  □ You know exactly how to roll back every layer if prod breaks:
 
@@ -221,16 +273,16 @@ Display this checklist verbatim:
      Vectors:     restore ChromaDB data dir backup (when RAG is live)
      K8s:         kubectl rollout undo deployment/<name>  [N/A for now]
      Infra:       terraform apply previous state  [N/A for now]
-     HF Spaces:   git push (force previous commit) or revert via UI
+     App deploy:  use the project's actual redeploy trigger
 
  □ Previous working state tagged (optional but recommended)
      (git tag v0.x before merging — makes rollback target explicit)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- 9. COMMUNICATION                                     [UNIVERSAL]
+9. COMMUNICATION                                     [UNIVERSAL]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  □ Safe deploy window — is this a low-traffic time?
-     (HF Spaces cold-starts during redeploy; avoid peak hours)
+     (consider restart time, migration time, cache warmup, and user traffic)
  □ Breaking changes communicated to affected clients
      → N/A until external tenants embed the widget
  □ Team notified (if multi-developer)
@@ -240,6 +292,8 @@ Display this checklist verbatim:
 ```
 
 ---
+
+**Reminder before asking for confirmation:** Apply the conditional display rules from Step 3c above. Sections 3, 4, 6, 7 are replaced with their auto-skip line when their flag is false. If the user types "full checklist", re-display with all 9 sections in full before asking for confirmation.
 
 After displaying the checklist, use **AskUserQuestion** with 3 options:
 
@@ -253,15 +307,28 @@ After displaying the checklist, use **AskUserQuestion** with 3 options:
 
 ---
 
-## Phase 4: Execute Release
+## Phase 4: Execute Release (via PR)
 
-1. `git switch main`
-2. `git merge --no-ff development`
-   - If merge conflict → stop, report conflict details, `git switch development`, tell user to resolve manually
-3. Use **AskUserQuestion** (Yes/No): "Push `main` to remote? (`git push -u origin main`)"
-4. **If Yes:** `git push -u origin main`
-5. **If No:** skip push
-6. `git switch development` — return to development after release
+The release goes through a PR into `main` — CI re-runs on it, and merging it is the push to `main` that triggers `deploy-prod.yml`.
+
+1. Open the release PR:
+   ```
+   gh pr create --base main --head development --title "release: <summary>" --body "<what is shipping>"
+   ```
+2. **CI gate:** `gh pr checks <pr> --watch` — `ci.yml` runs on the PR into `main`. If any check fails, STOP and report; never merge a red release.
+3. Use **AskUserQuestion** (Yes/No): "CI is green. Merge the release PR into `main` now? (triggers production deploy)"
+4. **If Yes** — merge with a **merge commit** (NOT squash — preserves the shared `development`↔`main` history; `development` is permanent):
+   ```
+   gh pr merge <pr> --merge
+   ```
+   Do NOT pass `--delete-branch` — `development` is a permanent branch. Merging into `main` triggers `deploy-prod.yml`.
+5. **If No:** leave the PR open; done.
+6. Sync local branches:
+   ```
+   git switch main && git pull
+   git switch development && git pull
+   ```
+   Both pulls should be clean fast-forwards — `main` just received the merge commit, and local `development` should never have commits that aren't already on `origin/development` (vibe-code branches from `origin/development` directly and pushes via PR, never merging into local `development`). If `git pull development` reports divergence here, it means a prior session violated that rule — fix it with `git reset --hard origin/development`.
 
 After push, display post-release steps:
 
@@ -269,13 +336,13 @@ After push, display post-release steps:
 Release pushed. Post-release checklist:
 
 □ Run DB migrations on production
-    [this project: docker exec chatbot_backend_prod uv run alembic upgrade head]
+    [use the real production migration command]
 □ Verify deployment rebuilt successfully
-    [this project: check HF Spaces Actions tab]
+    [check the actual deploy pipeline, platform logs, or runner output]
 □ Smoke test — manually verify the critical path works end-to-end
-    [this project: send a message on the live chatbot at monireach.com]
+    [test the project's highest-value production workflow]
 □ Watch logs for the first 10 minutes
-    [this project: HF Spaces → Logs tab]
+    [use the actual runtime logs/observability surface]
 □ Confirm rollback target is known in case issues appear in the next 24h
 ```
 
@@ -283,7 +350,7 @@ Release pushed. Post-release checklist:
 
 ## Merge Strategy
 
-Always `--no-ff`. Creates a clear merge commit marking the exact release point — invaluable when debugging production issues.
+Release PRs merge with a **merge commit** (`gh pr merge --merge`), never squash. A merge commit marks the exact release point and preserves the shared history between the two permanent branches (`development`↔`main`) — squashing would fork their histories and break future `development → main` diffs. (Contrast: feature → `development` PRs squash, because a feature branch is short-lived.)
 
 ---
 
@@ -294,8 +361,8 @@ Always `--no-ff`. Creates a clear merge commit marking the exact release point �
 | 0     | Investigate (sub-agent)             | None                                   |
 | 1     | Safety check                        | None (auto-stop if nothing to release) |
 | 2     | Show commits to be released         | Yes / No (abort)                       |
-| 3     | Pre-flight checklist (9 categories) | All clear / Found issue / Discuss      |
-| 4     | Merge development → main + push     | Yes / No (push)                        |
+| 3     | Pre-flight checklist (up to 9 categories, risk-classified) | All clear / Found issue / Discuss      |
+| 4     | Open release PR → CI gate → merge   | Yes / No (merge after green)           |
 
 > **When to use:** Only when consciously deciding to ship everything in `development` to production.
 > **For routine feature commits:** use `/git-commit-workflow` instead.

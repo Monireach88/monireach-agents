@@ -34,6 +34,13 @@ When investigating a bug or issue that originates in a **different repository** 
 - Then continue working in the current project (e.g. adjust the UI error message, add a workaround) if applicable
 - Only make changes to the other repo when the user **explicitly asks** you to switch to it
 
+**Format requirement when appending to `crucial_notes.md`:**
+
+1. Read the first ~20 lines of `crucial_notes.md` before writing — the format is documented there
+2. Every actionable item (something that must be fixed or done) **must** use a `🔲 (PRIORITY) description` marker — no exceptions
+3. Resolved items use `✅ (PRIORITY) description` with `→ follow-up detail` lines beneath
+4. Free-form prose (root cause, context, code snippets) is fine in the section body, but the triage-visible action line must be the `🔲` bullet — that is what `grep -n '🔲'` surfaces at session init
+
 ## Python Dependency Management
 
 **ALWAYS use `uv add` / `uv remove` to manage dependencies — never edit `pyproject.toml` manually.**

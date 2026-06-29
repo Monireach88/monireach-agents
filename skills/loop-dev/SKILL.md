@@ -55,7 +55,12 @@ In a state-backed dev project, also relay any 🔲 lines in `archive/ci_inbox.md
 2. **Arm `/goal`** with the completion condition, verbatim-precise so its evaluator can check it each turn:
    > "Every item in `<ledger path / target section>` is marked verified-PASS (`[x]`) or documented-blocked (`[!]`)."
    `/goal`'s evaluator re-checks this against the ledger after every turn and keeps the loop running until it holds. **`/goal` unavailable?** Skip this step and self-drive: at the end of every turn, re-read the ledger and continue to the next unfinished item yourself; only stop when the condition above is true. The condition is identical either way — `/goal` is enforcement assist, not the contract.
-3. Post the kickoff message: resolved profile, TARGET, ordered work-set, DONE_CHECK, WARNINGS. Git commits are pre-approved for dev profiles (vibe-code rule); push to remote is NOT.
+3. **For dev profiles: create the session branch.** Branch from `origin/development`:
+   ```
+   git switch -c feat/loop-<YYYYMMDD> origin/development
+   ```
+   All commits this session go on this branch. Never commit directly to `development` — not code, not docs, not one-liners.
+4. Post the kickoff message: resolved profile, TARGET, ordered work-set, DONE_CHECK, WARNINGS, and the session branch name. Git commits are pre-approved for dev profiles (vibe-code rule); push to remote is NOT (until Phase 4).
 
 ## Phase 3 — The loop (per atomic item, in dependency order)
 
@@ -68,7 +73,8 @@ In a state-backed dev project, also relay any 🔲 lines in `archive/ci_inbox.md
 │     dev: git add (untracked files are invisible to git diff without staging)
 │     non-dev: ensure the produced artifact + its done-criteria are written to a file the verifier can read
 │   VERIFY via Slot C: spawn the resolved verifier (item + its done-criteria/AC + root)
-│   ├─ PASS → record [x] with evidence ref → (dev: commit → merge to development → delete branch)
+│   ├─ PASS → record [x] with evidence ref → (dev: commit all changes including docs updates
+│   │         onto the session branch → continue to next task — no PR yet)
 │   │         → update the work source (project_status.md symbol flip / ledger line)
 │   ├─ FAIL → apply REQUIRED_FIXES → re-run the unit's checks → re-spawn the verifier
 │   │         (max 3 rounds; each round's verdict recorded)
@@ -79,20 +85,33 @@ In a state-backed dev project, also relay any 🔲 lines in `archive/ci_inbox.md
 
 Rules inside the loop:
 - One atomic item per iteration — never batch.
-- The verifier's GAPS (even on PASS) become new ledger/backlog items before moving on.
+- The verifier's GAPS (even on PASS) require **gap triage** before moving on. For each gap:
+  1. Read the current version goal (V1 goal statement in `project_status.md`, or the original instruction).
+  2. Ask: "Would this version be incomplete or incorrect without fixing this gap?"
+     → YES  → add to the **current version** backlog (state-backed: V1 Task Details in `project_status.md`; ledger-backed: append to the ledger)
+     → NO   → Post-V1 or V2 — you **must** state the reason it is out of scope in the gap note
+     → UNCLEAR → surface to user immediately; do not place it silently
+  3. **Default = current version.** Post-V1/V2 requires an explicit written reason. No reason = V1.
+  4. Auth and security coverage gaps (missing 401/403/auth tests for a new endpoint, unguarded edge cases on an existing auth flow) are **always current-version** — an untested auth boundary is never optional.
 - A blocker that needs the user (credentials, a sign-off, an external service) is a blocker *immediately* — never retry what cannot succeed unattended.
 - Never weaken, skip, or fake a done-check to get a PASS. The verifier treats this as an integrity violation, and so must you — it is the one thing that voids the trust promise.
 
 ## Phase 3-P — Parallel mode (Workflow orchestration)
 
-When the work-set has **3 or more independent items** (disjoint write scopes; for dev, no shared files and no shared migration chain), orchestrate them with the **Workflow tool** instead of running sequentially. Shape: `pipeline(items, execute, verify)` — one chain per item, no barrier; execute stage runs one agent per item (dev: `isolation: 'worktree'`, vibe-code playbook); verify stage runs the resolved Slot-C verifier per item, same FAIL→fix→re-verify contract (max 3 rounds). The workflow does NOT merge. After it returns, the main loop integrates **serially** — for each PASS item, merge/record one at a time so a bad result is caught before the next lands; FAIL/blocked items follow the Phase-3 blocker procedure. Fewer than 3 independent items, or any shared-scope doubt → stay sequential.
+When the work-set has **3 or more independent items** (disjoint write scopes; for dev, no shared files and no shared migration chain), orchestrate them with the **Workflow tool** instead of running sequentially. Shape: `pipeline(items, execute, verify)` — one chain per item, no barrier; execute stage runs one agent per item (dev: `isolation: 'worktree'`, vibe-code playbook); verify stage runs the resolved Slot-C verifier per item, same FAIL→fix→re-verify contract (max 3 rounds). The workflow does NOT merge. After it returns, the main loop integrates **serially** — for each PASS item, merge its worktree branch into the session branch (`git merge <branch> --no-ff`) one at a time, so a bad result is caught before the next lands. Do NOT merge into `development` directly. FAIL/blocked items follow the Phase-3 blocker procedure. Fewer than 3 independent items, or any shared-scope doubt → stay sequential.
 
 ## Phase 4 — Deliver the trusted result
 
 When every ledger item is `[x]` or `[!]`:
 
 1. Run the work-set's overall done-check (dev: full test suite via the project's `CLAUDE.md` command — container, never host, when it says so; non-dev: confirm the saturation/coverage criterion the gate recorded).
-2. **All clear:** for dev profiles, run the end-session workflow (logging-workflow §2.5: daily_log → current_state sync → §2.6 archival). Remove the ledger file (`.loop_ledger.md`) if one was created. `/goal` clears itself once its condition holds.
+2. **All clear:** for dev profiles, run the end-session workflow (logging-workflow §2.5: daily_log → current_state sync → §2.6 archival). Then push the session branch and open one PR:
+   ```
+   git push -u origin feat/loop-<YYYYMMDD>
+   gh pr create --base development --title "<one-line summary of the work-set>" \
+     --body "<bullet list of tasks completed, gaps added, test count>"
+   ```
+   Tell the user: "All tasks complete. One PR is ready for your review: `<PR title>`. Please merge when ready." Then STOP — do not merge locally. After the user confirms the PR is merged: `git pull` to sync local development, delete the local session branch. Remove the ledger file (`.loop_ledger.md`) if one was created. `/goal` clears itself once its condition holds.
 3. **Blocked items remain:** confirm each carries a documented blocker, then stop — clearing `/goal` is sanctioned here (state the remaining blockers).
 4. **Final report:** items completed (with verifier round counts), items blocked (with the exact blocker), gaps added to the backlog/ledger, and the overall done-check result.
 
