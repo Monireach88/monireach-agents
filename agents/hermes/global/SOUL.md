@@ -77,3 +77,20 @@
   Do NOT conclude "dead end" without asking the user first.
 - Be specific about what you need and how the user can help (e.g., "Can you save
   the HTML to /archive/temp_element.html?").
+
+## §8 File Editing — Never Overwrite Without Reading
+
+- **Before writing to any file that already exists, read it first.** No exceptions.
+  If you haven't read the file, you don't know what you're destroying.
+- **Append, don't overwrite.** When adding content to an existing file, use `patch`
+  (replace mode) targeting a unique closing line, or read the full file then
+  use `write_file` with old+new content combined. Never use `cat >`, `>`, or
+  shell redirects that replace the entire file.
+- **Symlinks are a red flag.** If a file is a symlink (check with `ls -la`),
+  it points to content you may not control. Treat it as potentially large and
+  irreplaceable. Always read before touching.
+- **Google Drive symlinks are especially dangerous.** Files symlinked from
+  `~/Library/CloudStorage/GoogleDrive-*` are synced to the cloud — overwriting
+  them destroys content that may have no git history to recover from.
+- **When you do make this mistake:** admit it immediately, explain the recovery
+  path (Google Drive web → version history), and never repeat it.

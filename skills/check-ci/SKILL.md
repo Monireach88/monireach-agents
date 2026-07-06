@@ -1,7 +1,7 @@
 ---
 name: check-ci
 description: Use when the user invokes "/check-ci" or asks to check CI/CD status, GitHub Actions status, or deployment status. Defaults to the current project's repo (discovered from git remote); "/check-ci all" sweeps every repo of the authenticated owner. Also callable by automations (/loop, /loop-dev), which persist failures to archive/ci_inbox.md.
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Check CI
@@ -66,6 +66,24 @@ If any run has status `failure`:
   ```bash
   gh run view <run-id> --repo <owner/repo> --log-failed
   ```
+
+## Step 3a: Diagnose Whether Failure Is Real
+
+A CI failure on `main` (merge push) that passed on the PR branch is usually environmental, not a code defect. Before reporting it as a bug:
+
+1. **Cross-reference:** check if the same commit passed on the PR branch CI — `gh run list` shows both the `pull_request` run (feature branch) and the `push` run (main merge). If the PR CI was green with the same code, the failure is likely a flake.
+2. **Reproduce locally:** run the specific failing test(s) in the project's authoritative environment:
+   ```bash
+   # For smart_chatbot: Docker
+   docker exec chatbot_backend_dev uv run pytest tests/path/to/test.py::test_name -rAq --tb=short
+   ```
+3. **Decide:**
+   - Local passes → suggest re-running the CI job: `gh run rerun <run-id> --repo <owner/repo>`
+   - Local also fails → treat as a real code defect and investigate
+
+Common flake signatures: UUID/float type-mapping (`AttributeError: 'float' object has no attribute 'replace'`), race conditions in DB fixtures, transient network timeouts.
+
+If a failure persists across reruns but passes locally, load `references/debugging-persistent-ci-failures.md` for a systematic environment-comparison playbook — DB version mismatches, SQLite library build differences, module-level import side effects, test ordering, and unnecessary `session.refresh()` patterns.
 
 ## Step 4: Summary Line
 

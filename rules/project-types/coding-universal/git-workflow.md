@@ -28,6 +28,8 @@ When the user confirms which task to continue (triggered from `initialize` task 
 
 **Base branch rule:** Always create new feature branches from `development`, never from `main` or `staging`.
 
+**PR target rule:** Feature branches always merge back into the branch they were cut from. Since all feature branches are cut from `development`, all feature PRs must target `development`. When opening a PR with `gh pr create`, always pass `--base development` explicitly — never let it default to the repo's GitHub default branch.
+
 ---
 
 ## §5.2 Commit Message Rules
