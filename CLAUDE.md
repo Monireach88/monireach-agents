@@ -8,14 +8,15 @@ This file handles project-type routing, standard project structure, and session 
 ## Project Type System
 
 Every project declares its type in its `CLAUDE.md`. At session start:
+
 1. Read the project's `CLAUDE.md` — note the declared project type
 2. Apply the category rules for that type
 
-| Project Type | Rules that apply |
-|---|---|
-| `coding` | Read `agent_core/rules/project-types/coding.md` — it lists which standards files to read |
-| `research-academic` | Read `agent_core/rules/project-types/research-academic.md` |
-| `personal` | Universal rules only — no additional file needed |
+| Project Type        | Rules that apply                                                                         |
+| ------------------- | ---------------------------------------------------------------------------------------- |
+| `coding`            | Read `agent_core/rules/project-types/coding.md` — it lists which standards files to read |
+| `research-academic` | Read `agent_core/rules/project-types/research-academic.md`                               |
+| `personal`          | Universal rules only — no additional file needed                                         |
 
 **Universal rules** (`~/.claude/rules/` = `agent_core/rules/universal/`) are auto-loaded every session.
 **Project-type rules** (`agent_core/rules/project-types/`) are NOT auto-loaded — read them explicitly at session start based on the project type declared in the project's `CLAUDE.md`.
@@ -28,20 +29,22 @@ If no project `CLAUDE.md` exists: ask the user the project type before starting 
 
 Every coding project must have these files. Verify they exist before starting work; if any are missing, flag it.
 
-| File / Directory | Purpose |
-|---|---|
-| `CLAUDE.md` | Project type declaration + project-specific rules only. Never put universal rules here. |
-| `.claude/` | Project-specific Claude config: `rules/` (standards files), `settings.local.json` |
-| `PROJECT.md` | Internal navigation hub — current focus, tech stack, directory map, context loading guide |
-| `README.md` | External docs — what it is, setup, API, stack. For public/recruiter audience. |
-| `DOCKER_SETUP.md` | Docker and environment variable reference (required if project uses Docker — skip only when explicitly no Docker) |
-| `current_state/project_status.md` | Completed milestone summary + active tasks + backlog |
-| `current_state/milestone.md` | Full detail archive of completed tasks |
-| `archive/daily_log.md` | Session-by-session log of decisions, blockers, and progress |
-| `docs/error_log.md` | Debugging investigations requiring root cause analysis |
-| `.env.example` | Documents all required environment variables (no real values — always safe to commit) |
+| File / Directory                  | Purpose                                                                                                                              |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `CLAUDE.md`                       | Project type declaration + project-specific rules only. Never put universal rules here.                                              |
+| `.claude/`                        | Project-specific Claude config: `rules/` (standards files), `settings.local.json`                                                    |
+| `PROJECT.md`                      | Internal navigation hub — current focus, tech stack, directory map, context loading guide                                            |
+| `README.md`                       | External docs — what it is, setup, API, stack. For public/recruiter audience.                                                        |
+| `DOCKER_SETUP.md`                 | Docker and environment variable reference (required if project uses Docker — skip only when explicitly no Docker)                    |
+| `current_state/project_status.md` | Current state + active tasks + backlog (source of truth for what's live NOW)                                                         |
+| `current_state/milestone.md`      | Full detail archive of completed tasks (rows flow here from `project_status.md`)                                                     |
+| `current_state/bugs.md`           | **Optional** - open bug tracker; mirrors `project_status.md` structure. See `documentation-structure.md` §10.4.                      |
+| `current_state/resolved_bugs.md`  | **Optional** - resolved bug archive; mirrors `milestone.md` structure. Paired with `bugs.md` - a project either has both or neither. |
+| `archive/daily_log.md`            | Session-by-session log of decisions, blockers, and progress                                                                          |
+| `docs/error_log.md`               | Debugging investigations requiring root cause analysis                                                                               |
+| `.env.example`                    | Documents all required environment variables (no real values — always safe to commit)                                                |
 
-**Rule:** Verify in `project_status.md` before assuming any feature is built. Do not trust memory or conversation history.
+**Rule:** Verify in `project_status.md` (and `bugs.md` if that pair exists) before assuming any feature is built or any bug is open. Do not trust memory or conversation history.
 
 ---
 
@@ -87,29 +90,38 @@ Every new project's CLAUDE.md should follow this pattern (populated by `/start-l
 # CLAUDE.md — [Project Name]
 
 ## Project Type
+
 `coding`
 
 ## Session Initialization
 
 Follow `session-management.md §9.1`. Also read on demand:
+
 - `current_state/milestone.md`
 - `DOCKER_SETUP.md`
-[add project-specific files here as they emerge]
+  [add project-specific files here as they emerge]
 
 Rule: verify in `project_status.md` before assuming something is built.
 
 ## End Session
 
 Follow `logging-workflow.md §2.5`. Additionally:
+
 - Update `current_state/project_status.md`
 - Update `PROJECT.md` only if structure/stack/architecture changed
 
 ## Doc Sync Rule
 
-| Changed in `project_status.md` | Sync target |
-|---|---|
-| Task completed | `current_state/milestone.md` |
-| Features, API, tech stack, roadmap | `README.md` |
-| Deployment, env vars | `DOCKER_SETUP.md` |
+| Changed in `project_status.md`     | Sync target                  |
+| ---------------------------------- | ---------------------------- |
+| Task completed                     | `current_state/milestone.md` |
+| Features, API, tech stack, roadmap | `README.md`                  |
+| Deployment, env vars               | `DOCKER_SETUP.md`            |
+
 [add project-specific rows here]
+
+## Bug Tracker (Optional)
+
+If this project uses the `current_state/bugs.md` + `current_state/resolved_bugs.md` pair (see `documentation-structure.md` §10.4), add a one-line pointer under `## Current State` in `project_status.md`.
+`Bug tracker: see [current_state/bugs.md](bugs.md); resolved entires in [current_state/resolved_bugs.md](resolved_bugs.md).`
 ```

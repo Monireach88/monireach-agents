@@ -154,6 +154,7 @@ When user says "end session":
    - **Symbol rule:** every task entry in `project_status.md` must carry a symbol (✅, 🔄, or 🔲). Never leave a task name without a symbol — a symbolless task is invisible to search and will be missed.
    - **Orphan-detail rule:** whenever you add a `### 🔲/🔄 Task Name` detail section, add its matching one-line `- 🔲/🔄 Task Name` entry to the checklist above in the SAME edit (`documentation-structure.md` §10.3, bidirectional invariant). Before finishing, run the §10.3 `comm -13` orphan-detail check — any output is a detail section with no checklist line; fix it now.
    - **Completed tasks → milestone.md:** at end-session, any `### ✅` detail section still in `project_status.md` must be archived using the atomic sequence in **§2.6**. This should be rare — §2.6 fires mid-session when a task completes, so end-session is just a safety net.
+   - **If `current_state/bugs.md` exists** (the optional bug-tracker pair, `documentation-structure.md` §10.4): apply the same update discipline to it - every bug newly observed today gets a row in the `## Bug List` table + a `### 🔲 BUG-NNN - title` detail section; every bug fixed today gets removed from `bugs.md` and archived into `current_state/resolved_bugs.md` until the same atomic sequence as §2.6 (mirror: copy detail section → delete from `bugs.md` → add Quick Reference row to `resolved_bugs.md`), then bump the open/resolved counts in `bugs.md`'s `## Current State` header.
 
 3. **Update PROJECT.md (if applicable):**
    - ONLY if project structure changed (new directories, major refactoring, new components)
@@ -173,6 +174,7 @@ When user says "end session":
 **Trigger:** A task is marked `✅` and is entirely complete — all sub-tasks done, verified, no open items.
 
 **Do NOT fire this for:**
+
 - Tasks partially done (some sub-tasks still 🔲)
 - Tasks marked 🔄 (in progress)
 - Tasks that "look done" but haven't been verified
@@ -199,11 +201,13 @@ When user says "end session":
 **milestone.md entry format (mandatory — never deviate):**
 
 Step 1 — Add a row to the Quick Reference table at the top:
+
 ```
 | [Milestone Name] | YYYY-MM-DD (– YYYY-MM-DD if multi-day) | X/X (or — if no tests) |
 ```
 
 Step 2 — Append a full section at the bottom of the file:
+
 ```markdown
 ## ✅ [Milestone Name] (YYYY-MM-DD – YYYY-MM-DD)
 
@@ -229,6 +233,7 @@ mount, etc. Skip for trivially obvious fixes.]
 ```
 
 Rules:
+
 - Section heading always starts with `## ✅`
 - Every sub-task line starts with `✅`
 - `**Why this task existed:**` is mandatory on every entry
@@ -239,3 +244,46 @@ Rules:
 - `**Final state:**` always present when there are tests; omit only if no tests apply
 - **Acceptance blocks are copied VERBATIM** — if the archived task detail carries an `**Acceptance:**` Gherkin block, it transfers into the milestone entry unchanged, placed after the bullets and before `**Final state:**`. The rewrite-to-plain-English rule applies to bullets, NEVER to the Gherkin block — the Given/When/Then text is a precision artifact; rewriting it destroys its value as the record of what "done" meant. Omit the slot when the task had no AC block.
 - `project_status.md` must never contain `### ✅` detail sections — with ONE exception: sections marked `*(awaiting phase-end archival)*` under the phase-end AC archival rule (see "Do NOT fire this for"), which remain only until their phase completes. All other completed details belong only in `current_state/milestone.md`; `project_status.md` keeps only the Completed Milestones table row plus active/backlog detail sections.
+
+---
+
+## $2.7 archive/crucial_notes.md - Long-Lived Notes Outside the Task Flow
+
+**Purpose:** A scratchpad for things that would be painful to rediscover but do not yet belong in `project_status.md` as tasks. Use this file to record:
+
+- Known bugs deferred for later
+- Non-obvious constraints (env quirks, vendor limits, ACL rules)
+- Decisions that leave no git trail (verbal agreements, meeting outcomes, agent-behavior fine-tunes)
+- Patterns or anti-patterns observed across sessions
+- Anything that would be painful to rediscover from scratch
+
+**Entry format – open item (🔲):**
+
+```md
+## Some topic name
+
+Optional one-line description if the title isn’t self-explanatory.
+
+- 🔲 (HIGH|MEDIUM|LOW) The actual note. Keep it to one sentence + optional follow-up arrows.
+```
+
+Priority labels are mandatory: `HIGH`, `MEDIUM`, or `LOW`. Without a priority, the $9.1 init scan cannot rank items when surfacing them.
+
+**Entry format – promoted to project_status.md (✅):**
+
+When the note becomes a real task and is logged into `project_status.md`, flip the symbol to `✅` in `crucial_notes.md` (do NOT delete the entry – keep it as a breadcrumb). Optionally add `→` to follow-up lines for context:
+
+```md
+- ✅ (HIGH) The actual note.
+  → Logged as V2 task in project_status.md on YYYY-MM-DD
+  → Additional context if useful
+```
+
+**Rules:**
+
+- **Append at the bottom** under an existing topic, OR add a new `## Topic` section if no existing one fits. Never prepend.
+- **Never auto-promote.** §9.1 (init scan) classifies open items and presents them to the user; only the user decides what gets logged into `project_status.md`.
+- **One sentence per bullet.** If a note needs paragraphs, it's a task – put it in `project_status.md`, leave a one-line breadcrumb here pointing to it.
+- **Do not use `crucial_notes.md` as a daily log.** Session narrative belongs in `archive/daily_log.md`.
+- **crucial_notes.md** is for items that outlive a single session.
+- **Cross-project notes:** when investigating a bug rooted in a different repo (per `coding.instructions.md` "Cross-Project Issues"), the note goes into THAT repo's `archive/crucial_notes.md`, not the current one.
