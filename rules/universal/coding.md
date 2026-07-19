@@ -9,8 +9,8 @@ These files apply to all coding projects regardless of work area:
 
 - `documentation-structure.md` — README vs PROJECT.md, project_status.md format, optional bugs.md/resolved_bugs.md pair (§10.4)
 - `git-workflow.md` — branch strategy, commit rules, atomic task check
-- `logging-workflow.md` — daily log, session end workflow
-- `session-management.md` — initialize and end-session procedures
+- `logging-workflow.md` — daily log, session end workflow (including bugs.md updates when present)
+- `session-management.md` — initialize and end-session procedures (read bugs.md at init when present)
 - `testing-commands.md` — pytest flags and project prefix conventions
 - `project-navigation.md` — read PROJECT.md first rule
 
@@ -79,4 +79,4 @@ For **status markers specifically**, prefer BMP-safe alternatives on Windows: �
 
 **Never:** retry the same one-shot write after a truncation, silent partial write, or empty-file result. That is the documented failure loop §1.4 was written to prevent.
 
-**Never:** run `rm` on gitignored file to "start clean" before rewriting. Rename it (`mv file file.bak`) so recovery is possible if the rewrite goes wrong. The shell-level `rm → trash` hook is a safety net, not a license to skip this discipline.
+**Never:** run `rm` on a gitignored file to "start clean" before rewriting. Rename it (`mv file file.bak`) so recovery is possible if the rewrite goes wrong. The shell-level `rm → trash` hook is a safety net, not a license to skip this discipline.

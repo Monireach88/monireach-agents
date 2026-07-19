@@ -82,7 +82,7 @@ For each diagram, in order:
    - The `mermaid-diagram-preview` VS Code tool opens a pane for the human, but the agent cannot see that pane. Use it for human hand-off only, not for self-judgement.
 
 3. **Load the saved image with `view_image` and rate the rendered output 1-10** on legibility for a fresh reader. **<7/10 > rework**. State the rating + the specific visual problem you saw (e.g. "edge labels overlap", "3 nodes are visually disconnected", "left-to-right layout puts the entry point on the right").
-   - **If `view_image` returns an error** (transient transport / IDE-pane race), **do NOT stop or ask for human intervention**. Sleep 2s, retry once. If the second attempt also errors, log the file path + skip visual rating for that one diagram, and continue with the rest. Flag the skipped diagrams in the final summary's `LEFTOVER ROUGH SPOTS` section. [Visual rating skipped - image load failed twice].
+   - **If `view_image` returns an error** (transient transport / IDE-pane race), **do NOT stop or ask for human intervention**. Sleep 2s, retry once. If the second attempt also errors, log the file path + skip visual rating for that one diagram, and continue with the rest. Flag the skipped diagrams in the final summary's `LEFTOVER ROUGH SPOTS` section as `visual rating skipped - image load failed twice`.
    - Render all diagrams to disk first (batch the renders), then load them one by one. A single failed view does not block other diagrams.
 
 4. **After every edit to a diagram**, re-render AND re-view AND re-rate before claiming a new score. Self-rating from code or syntax-validation alone is a hard rule violation.
@@ -96,12 +96,12 @@ Type-specific guidance:
 - Use the right Mermaid type: `graph` / `flowchart` for component / dependency, `erDiagram` for data model, `sequenceDiagram` for time-ordered flows. `pie` / `quadrantChart` rarely useful.
 - Every diagram must have a caption underneath explaining **what to look at first** (the dominant edge, the longest path, the cluster) – not just what the diagram is.
 - Diagrams should be Confluence-rendering as-is (Confluence supports mermaid via plug-in but renders raw fenced blocks safely).
-- **classDef must include `color`:** when it includes `fill:`. \*\* If you set a custom background colour on a Mermaid node (e.g. `classDef hub fill:#fff4c2;`), the renderer keeps the theme's default text color. On light-themed previews (VS Code's Ctrl+Alt+V, GitHub light mode) that text is often near-white, making your custom-fill boxes unreadable. Always pair: `fill:#xxx,stroke:#yyy,color:#000`. Default-styled boxes are unaffected – the rule applies only to classes that override fill.
+- **classDef must include `color`:** when it includes `fill:`.\*\* If you set a custom background colour on a Mermaid node (e.g. `classDef hub fill:#fff4c2;`), the renderer keeps the theme's default text color. On light-themed previews (VS Code's Ctrl+Alt+V, GitHub light mode) that text is often near-white, making your custom-fill boxes unreadable. Always pair: `fill:#xxx,stroke:#yyy,color:#000`. Default-styled boxes are unaffected – the rule applies only to classes that override fill.
 
 Known mermaid.ink rendering traps (verified 2026-06-14):
 
-- **Non-ASCII characters in PNG output render as latin-1 mojibake.** A star (`★`, U+2605) becomes `ä=...`; an em-dash becomes `ä#`. The `/svg/` endpoint is UTF-8 clean, but `view_image` only accepts raster formats. Workaround: keep diagram labels ASCII-only when rendering via the PNG endpoint. SVG output preserves UTF-8 if you only need owner inspection without `view_image`.
-- **Notes / edge labels with mixed punctuation (`;`, `(`, `@`) can 400 the mermaid.ink parser** even when the diagram validates locally. Symptom: HTTP 400 from mermaid.ink with otherwise-valid syntax. Workaround: keep notes simple – no parens or semicolons inside note text. Move details to the surrounding prose.
+- **Non-ASCII characters in PNG output render as latin-1 mojibake.** A star (`★`, U+2605) becomes `â˜...`; an em-dash becomes `â€`. The `/svg/` endpoint is UTF-8 clean, but `view_image` only accepts raster formats. Workaround: keep diagram labels ASCII-only when rendering via the PNG endpoint. SVG output preserves UTF-8 if you only need owner inspection without `view_image`.
+- **Notes / edge labels with mixed punctuation (`;`, `()`, `@`) can 400 the mermaid.ink parser** even when the diagram validates locally. Symptom: HTTP 400 from mermaid.ink with otherwise-valid syntax. Workaround: keep notes simple – no parens or semicolons inside note text. Move details to the surrounding prose.
 - **Windows `/tmp/foo` resolves to `C:\tmp\foo` when invoked from Python subprocess**, NOT to the git-bash tmp dir. The agent saw 6 silent failures running `python helper.py /tmp/out.png` from inside a parent Python process. Always resolve to the full Windows path: `C:/Users/<user>/AppData/Local/Temp/...` when constructing paths for subprocess calls. The git-bash shell handles `~/tmp` correctly: Python subprocess does not.
 
 ### Lens 4 - Cross-document coherence
@@ -109,7 +109,7 @@ Known mermaid.ink rendering traps (verified 2026-06-14):
 Check across the doc set:
 
 - Does the same fact get the same number everywhere? Build a quick cross-reference of all numeric claims (table count, file count, percentages, dates) and flag drift.
-- Does the index/landing doc’s one-line description of each file match what the file actually does (read the file’s first H2 or TL;DR)?
+- Does the index/landing doc's one-line description of each file match what the file actually does (read the file’s first H2 or TL;DR)?
 - If doc A says "see B for X", does B actually contain X?
 - Are "Related" cross-link headers symmetric? If A links to B, does B link back to A?
 - Are filenames cited in prose actually present at the cited path?
@@ -129,10 +129,11 @@ Check across the doc set:
 ## Rules
 
 - **Be conservative.** Never rewrite content beyond what a lens calls for. A "minor readability" fix should NOT rephrase a security finding.
-- **Never soften.** A security finding, a known bug, an `[unverified]` flag, or a deferred-to-X note for "tone."
+- When replacing a diagram, KEEP the prose adjacent to it unchanged unless the prose contradicts the new diagram.
+- **Never soften** A security finding, a known bug, an `[unverified]` flag, or a deferred-to-X note for "tone."
 - If you change a heading text, search the whole doc set for cross-links to that heading and update them.
 - Mermaid syntax must validate after your edits - if you cannot test, leave the original.
-- Keep edits **"idempotent"**; a second run of this agent should make no further changes.
+- Keep edits **idempotent**; a second run of this agent should make no further changes.
 - Do not invent new sections without owner permission. Reshaping existing sections is fine; adding "Conclusion" or "Limitations" wholesale is not.
 - Do not touch the engineering scratchpad (`_internal/`, `archive/`, `current_state/`) unless an explicit input names it.
 
@@ -145,7 +146,7 @@ DOC QUALITY VALIDATOR - SUMMARY
 
 REVIEWED: <N> docs
 EDITS APPLIED: <count edits> across <count files>
-DIAGRAMS REWORKED: <count> (each: <doc>, <type>, <before-rating>/10 -> <after-rating>/10, **rendered + visually checked: yes/no**)
+DIAGRAMS REWORKED: <count> (each: <doc>, <type>, <before-rating>/10 → <after-rating>/10, **rendered + visually checked: yes/no**)
 ASKS (need owner judgement): <count>
 
 PER-LENS HIGHLIGHTS (one line each):

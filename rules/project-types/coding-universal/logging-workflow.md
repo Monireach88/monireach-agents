@@ -247,7 +247,7 @@ Rules:
 
 ---
 
-## $2.7 archive/crucial_notes.md - Long-Lived Notes Outside the Task Flow
+## §2.7 archive/crucial_notes.md - Long-Lived Notes Outside the Task Flow
 
 **Purpose:** A scratchpad for things that would be painful to rediscover but do not yet belong in `project_status.md` as tasks. Use this file to record:
 
@@ -262,7 +262,7 @@ Rules:
 ```md
 ## Some topic name
 
-Optional one-line description if the title isn’t self-explanatory.
+Optional one-line description if the title isn't self-explanatory.
 
 - 🔲 (HIGH|MEDIUM|LOW) The actual note. Keep it to one sentence + optional follow-up arrows.
 ```
@@ -271,7 +271,7 @@ Priority labels are mandatory: `HIGH`, `MEDIUM`, or `LOW`. Without a priority, t
 
 **Entry format – promoted to project_status.md (✅):**
 
-When the note becomes a real task and is logged into `project_status.md`, flip the symbol to `✅` in `crucial_notes.md` (do NOT delete the entry – keep it as a breadcrumb). Optionally add `→` to follow-up lines for context:
+When the note becomes a real task and is logged into `project_status.md`, flip the symbol to `✅` in `crucial_notes.md` (do NOT delete the entry – keep it as a breadcrumb). Optionally add `→` follow-up lines for context:
 
 ```md
 - ✅ (HIGH) The actual note.
@@ -284,6 +284,5 @@ When the note becomes a real task and is logged into `project_status.md`, flip t
 - **Append at the bottom** under an existing topic, OR add a new `## Topic` section if no existing one fits. Never prepend.
 - **Never auto-promote.** §9.1 (init scan) classifies open items and presents them to the user; only the user decides what gets logged into `project_status.md`.
 - **One sentence per bullet.** If a note needs paragraphs, it's a task – put it in `project_status.md`, leave a one-line breadcrumb here pointing to it.
-- **Do not use `crucial_notes.md` as a daily log.** Session narrative belongs in `archive/daily_log.md`.
-- **crucial_notes.md** is for items that outlive a single session.
+- **Do not use `crucial_notes.md` as a daily log.** Session narrative belongs in `archive/daily_log.md`. `crucial_notes.md` is for items that outlive a single session.
 - **Cross-project notes:** when investigating a bug rooted in a different repo (per `coding.instructions.md` "Cross-Project Issues"), the note goes into THAT repo's `archive/crucial_notes.md`, not the current one.

@@ -78,7 +78,7 @@ Every coding project has two root-level documents that serve opposite audiences.
 | **Size**                       | Target 3-6 bullets; exceed only for genuinely critical operational-NOW facts that a fresh reader needs today. | Grows monotonically; never trimmed.                         |
 | **If work is shipped**         | It leaves this section.                                                                                       | It arrives in this table (+ narrative into `milestone.md`). |
 
-**A shipped deliverable NEVER belongs in Current State. Move it to Completed Milestones the moment it ships.** Historical narrative about the shipping event (`"Consolidation 2026-07-13..."`, `"Direction pivot 2026-06-30..."`) belons in `daily_log.md` under that date - not in Current State, not in Completed Milestones.
+**A shipped deliverable NEVER belongs in Current State. Move it to Completed Milestones the moment it ships.** Historical narrative about the shipping event (`"Consolidation 2026-07-13..."`, `"Direction pivot 2026-06-30..."`) belongs in `daily_log.md` under that date - not in Current State, not in Completed Milestones.
 
 ---
 
@@ -96,7 +96,7 @@ Required content (each is 1 bullet):
 - How to run locally (one-line pointer to the setup entry in `milestone.md`).
 - Source-repo pins if this project depends on external code repositories.
 - Bug tracker pointer (`bugs.md` / `resolved_bugs.md`) if that pair exists.
-- **`Next:` as the FINAL bullet** - one sentence naming the immediate next action + a short sequenced roadmap of what follows it. This bullet is mandatory whenever V1 has at lease one open (🔲/🔄) task. It bridges Current State (NOW) → V1 checklist (upcoming). Do NOT split it into a separate `Progress:` bullet unless the project has a live system whose state is genuinely distinct from "next task" (e.g. a running SaaS with `billing endpoint down since...`).
+- **`Next:` as the FINAL bullet** - one sentence naming the immediate next action + a short sequenced roadmap of what follows it. This bullet is mandatory whenever V1 has at lease one open (🔲/🔄) task. It bridges Current State (NOW) → V1 checklist (upcoming). Do NOT split it into a separate `Progress:` bullet unless the project has a live system whose state is genuinely distinct from "next task" (e.g. a running SaaS with `billing endpoint down since ...`).
 
 Anti-patterns to avoid:
 
