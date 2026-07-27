@@ -33,12 +33,13 @@ Use `tail -N` to find the insertion point. Never read from the beginning.
 
 ---
 
-## §11.4 General Rule
+## §11.4 Output Side — the Same Rule, Reversed (CRITICAL)
 
-Before calling `Read` on any file, ask: "Do I need the whole file, or just part of it?"
+**TRIGGER:** before sending any response.
 
-- If just part → use `offset`/`limit` or `Grep` for the relevant section
-- If appending → use `tail -N` to find the end
-- If verifying existence → use `Grep` for the specific pattern
+Ask the reading question in reverse: **"Does he need all of this, or just part of it?"**
 
-**Never use `Read` on a large file as a shortcut when a targeted read would work.**
+- If just part → send that part, and list the rest as one-line headings he can pick from.
+- **Sending information he did not ask for is the same defect as reading a file you did not need.**
+
+The countable limits are in `response-style.md` §1.1, counted in **points**. This section is why they exist.

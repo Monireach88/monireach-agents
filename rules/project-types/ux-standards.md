@@ -8,13 +8,13 @@ type: project
 
 **ALL RULES BELOW ARE MANDATORY. Apply during implementation — do not defer to post-review.**
 
+**If a section does not apply to this project, output one line: `SKIPPED §N — reason`.** A section skipped with no line is a violation. Without this, a rule that genuinely does not apply and a rule you forgot look identical.
+
 ---
 
-## §1. Read `frontend-standards.md` Fully Before Writing Any Frontend Code
+## §1. Scope
 
-- Read the entire file before starting any frontend task — not selected sections
-- Apply every applicable rule during implementation, not after review
-- If unsure whether a rule applies: it does
+`frontend-standards.md` is symlinked into this project and already loaded. Apply both files. **Do not re-read either one** — that contradicts `token-efficiency.md` §11.1.
 
 ---
 

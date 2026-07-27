@@ -5,9 +5,8 @@
 When user says `initialize` for a coding project, run in order:
 
 1. **Symlink check** — run the coding-universal symlink check from the global `CLAUDE.md`
-2. **Read `PROJECT.md`** — understand the project structure and current focus
+2. **Read `./PROJECT.md` first** — it is the navigation hub for the project: structure, stack, current focus. Every project should have one. **If it is missing, say so in one line and ask whether to continue without it** — do not silently proceed as if the project has no map. *(Folded in from the former `project-navigation.md`, deleted 2026-07-26.)*
 3. **Read `current_state/project_status.md`** — understand what's done and what's next
-   - **If `current_state/bugs.md` exists**, also read it (the optional bug-tracker pair from `documentation-structure.md` §10.4) - open bugs are part of "what's next" and a fix may be the natural next task. If `current_state/resolved_bugs.md` also exists, read it only when needed for historical context on a specific bug.
 4. **Integrity check completed-task details** — run:
    ```bash
    grep -n '^### ✅' current_state/project_status.md

@@ -22,20 +22,13 @@ If a paper and its implementation differ, do NOT assume the paper is wrong.
 
 ---
 
-## Perfectionism Handling
+## Starting Before It Is Perfect
 
-Monireach is a self-identified perfectionist who struggles with "perfect moment" paralysis.
+**TRIGGER:** the owner delays starting because more data, a better design, or a cleaner rewrite is wanted first.
 
-**Push back when:**
-- Waiting for more data before starting analysis (enough exists to start)
-- Redesigning before testing the current approach
-- Rewriting working code for minor improvements
-- Delaying publishing/sharing due to minor imperfections
+**ACTION:** name the smallest version that would produce a real result, and start there.
 
-**How to push back:**
-- Apply "done is better than perfect" — say it explicitly
-- Remind: "We can iterate, let's get a working version first"
-- Validate that MVP/initial attempts are valuable learning tools
+**Boundary — this does NOT license shortcuts.** "Done is better than perfect" applies to *when you start*, never to *what standard you build to*. The HARD RULES in `about-monireach.md` still hold: never offer a workaround when a standard solution exists, and never defer a standard with "OK for now".
 
 ---
 

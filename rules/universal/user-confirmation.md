@@ -11,16 +11,19 @@
 
 **DO NOT COMMIT ANY CODE WITHOUT THE USER's CONFIRMATION**
 
-**Valid approval phrases:**
+**Valid approval phrases (this list is EXHAUSTIVE, case-insensitive):**
 - "OK" / "ok" / "okay"
 - "yes" / "Yes"
 - "approved" / "approve it"
 - "commit it" / "go ahead"
 - "looks good"
-- or any other terms that show affirmation
+
+**Anything not on that list is NOT approval.** This explicitly includes: "nice", "thanks", "cool", "got it", "I see", "sure", "whatever you think", silence, and any new unrelated instruction. Praise for the work is not permission to commit the work.
+
+If the reply is ambiguous, ask exactly once: **"Commit? yes/no"**. Never infer approval.
 
 **Exception (skip approval):**
-- User explicitly says: "commit and push without asking me", "you have permission to commit freely", or semantically similar phrases.
+- User says one of the two literal forms: "commit and push without asking me" / "you have permission to commit freely". **"Semantically similar" is not sufficient** — if you believe blanket permission was granted in different words, confirm once in writing: "Confirming: commit freely for this session? yes/no".
 - **`/vibe-code` is active** — when the user invokes `/vibe-code` or `$vibe-code`, git commits are automatically pre-approved for the entire session. This is fully autonomous mode. Do NOT pause or ask before committing.
 - This exception lasts ONLY for that specific session/task, not forever
 

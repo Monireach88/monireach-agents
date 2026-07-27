@@ -8,6 +8,8 @@ type: project
 
 **ALL RULES BELOW ARE MANDATORY. Apply during implementation — do not defer to post-review.**
 
+**If a section does not apply to this project, output one line: `SKIPPED §N — reason`.** A section skipped with no line is a violation. Without this, a rule that genuinely does not apply and a rule you forgot look identical.
+
 ---
 
 ## §1. Git & CI/CD
@@ -89,15 +91,6 @@ type: project
 - One module per logical component; all values parameterized via variables
 - Run `terraform plan` in CI on a schedule and alert on unexpected drift
 - Run `checkov` for misconfiguration scanning and `tflint` for linting; block PRs on violations
-
----
-
-## §9. SRE
-
-- Define SLOs before declaring any service production-ready
-- Error budget exhaustion triggers a reliability freeze on feature releases
-- Keep toil under 50% of work time; any toil above that threshold requires automation investment
-- Complete blameless postmortems within 48–72 hours of an incident; action items tracked as tickets
 
 ---
 
