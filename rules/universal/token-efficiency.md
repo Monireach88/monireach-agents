@@ -39,7 +39,4 @@ Use `tail -N` to find the insertion point. Never read from the beginning.
 
 Ask the reading question in reverse: **"Does he need all of this, or just part of it?"**
 
-- If just part → send that part, and list the rest as one-line headings he can pick from.
-- **Sending information he did not ask for is the same defect as reading a file you did not need.**
-
-The countable limits are in `response-style.md` §1.1, counted in **points**. This section is why they exist.
+**Sending information he did not ask for is the same defect as reading a file you did not need.** The rules for it are `plain-language.md` §1 (what not to print) and `response-style.md` §1.1 (length).

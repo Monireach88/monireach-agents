@@ -1,24 +1,47 @@
 ---
 name: start-local-dev
-description: Use when the user invokes "/start-local-dev" or asks to scaffold a new local development project. Creates all boilerplate files for the selected stack in the current working directory.
-version: 1.2.0
+description: Use when the user invokes "/start-local-dev" or asks to scaffold a new local development project. Creates all boilerplate files for the selected stack in the current working directory. Handles coding, research-academic and personal projects. Safe to re-run - it only adds what is missing.
+version: 1.3.0
 ---
 
 # Start Local Dev
 
-Scaffold a new local development project. Language-agnostic; currently supports the `python-fastapi` and `node-typescript-express` stacks.
+Scaffold a new local development project. Language-agnostic; currently supports the `python-fastapi` and `node-typescript-express` stacks. Non-coding projects (`research-academic`, `personal`) get a short path with no stack files.
 
 ## When This Skill Applies
 
 - User invokes `/start-local-dev`
 - User asks to "scaffold a new project", "set up a new local project", "create project boilerplate"
+- User re-runs it on an existing project to add missing parts
 
-## Integration with `/technical-consultant`
+## Idempotency Rule (applies to every step)
 
-If the user has completed a `/technical-consultant tech-stack` session, a `TECH_STACK.md` file may exist in the working directory. If it does:
-1. Read it before asking any questions
-2. Pre-fill the stack choice and project details from it
-3. Tell the user: "I found `TECH_STACK.md` from your consultant session. I'll use that to scaffold the project. Confirm the details below before I proceed."
+The skill must be safe to re-run. Before a step writes anything, check what is already there:
+
+| State | Action |
+|---|---|
+| Present and correct | Verify, skip, and report "already set up: `<path>`" |
+| Present but wrong | Show the difference. Fix only after the user says yes |
+| Absent | Create it |
+
+- **Never overwrite** an existing `CLAUDE.md`, `PROJECT.md`, `README.md`, `current_state/project_status.md`, `current_state/milestone.md`, `archive/daily_log.md` or `.gitignore`. Merge in missing parts only, and show them to the user first.
+- Content the user wrote is never "wrong" just because it differs from a template below. Templates are for absent files only.
+- A re-run on a correctly set-up project changes nothing. End with a list: created / already set up / needs your decision.
+
+## Integration with the SDLC Docs
+
+The earlier SDLC skills write tracked files under `docs/`. Read each one if it exists, before asking any questions:
+
+| File | Produced by | Use it for |
+|---|---|---|
+| `docs/product-brief.md` | `/ideation` | Description, problem, users, scope |
+| `docs/prd.md` | `/product-spec` | Actors, entities, journeys |
+| `docs/architecture.md` | `/technical-consultant` | Stack per layer, infra, data schema |
+| `docs/adr/NNNN-*.md` | `/technical-consultant` | Why each stack choice was made |
+
+If a file is absent but its legacy root file exists (`PROJECT_BRIEF.md`, `PRODUCT_SPEC.md`, `TECH_STACK.md`), read the legacy file instead. Tell the user once that it should be migrated by re-running its producer skill. Do not fail.
+
+When the stack comes from `docs/architecture.md`, tell the user: "I found `docs/architecture.md` from your consultant session. I'll use that to scaffold the project. Confirm the details below before I proceed."
 
 ## Supported Stacks
 
@@ -35,13 +58,21 @@ If user requests an unsupported stack, say: "That stack is not yet supported. Yo
 
 ## Instructions for Agent
 
-### Step 1: Check for Consultant Output Files
+### Step 0: Project Type
 
-Before asking anything:
-- Check if `TECH_STACK.md` exists → read it, extract: project name, stack, one-line description, and tech decisions
-- Check if `PROJECT_BRIEF.md` exists → read it, extract: project description, problem, users, market, scope, differentiator
+- If `CLAUDE.md` exists, read its `## Project Type` line and use that type. Do not ask.
+- Otherwise ask: "Project type? `coding` / `research-academic` / `personal`".
+- `coding` → continue with Step 1.
+- `research-academic` or `personal` → follow **Non-Coding Path** below instead of Steps 1–6.
 
-These are interim documents from `/technical-consultant`. Their content will be absorbed into `PROJECT.md`, `README.md`, and `DOCKER_SETUP.md` during scaffolding. After scaffolding, offer to archive or delete them.
+### Step 1: Check for SDLC Docs
+
+Before asking anything, read the files in "Integration with the SDLC Docs" above (new path first, legacy root file as fallback):
+- `docs/architecture.md` + `docs/adr/` → extract: project name, stack, one-line description, and tech decisions
+- `docs/product-brief.md` → extract: project description, problem, users, market, scope, differentiator
+- `docs/prd.md` → extract: actors and core journeys (for the README feature list)
+
+These are permanent, tracked documents. Summarise them in `PROJECT.md`, `README.md` and `DOCKER_SETUP.md`, and link to them. Never move, archive or delete them.
 
 ### Step 2: Research Latest Tools (MANDATORY — Before Creating Any Files)
 
@@ -82,17 +113,54 @@ Wait for confirmation before creating files.
 
 Create every file in the standard project structure below, then the stack-specific files. Use the project name, description, and latest tools from Step 2.
 
+**Idempotency:** apply the Idempotency Rule to every file. Create only absent files. For an existing file, list what the template has that the file lacks, and add it only on the user's yes.
+
 **Standard project structure (every project, every stack):**
 - `CLAUDE.md` — minimal: project type + project-specific rules only
-- `PROJECT.md` — navigation hub; absorb `PROJECT_BRIEF.md` + `TECH_STACK.md` content if available
-- `README.md` — external docs; absorb summary sections from `PROJECT_BRIEF.md` if available
-- `DOCKER_SETUP.md` — Docker/infra guide; absorb infra decisions from `TECH_STACK.md` if available *(skip if user said No Docker)*
+- `PROJECT.md` — navigation hub; summarise `docs/product-brief.md` + `docs/architecture.md` if available, and link to `docs/`
+- `README.md` — external docs; absorb summary sections from `docs/product-brief.md` if available
+- `DOCKER_SETUP.md` — Docker/infra guide; absorb infra decisions from `docs/architecture.md` if available *(skip if user said No Docker)*
 - `.claude/settings.local.json` — project-specific Claude settings (empty object `{}` to start)
 - `current_state/project_status.md` — task summary and roadmap
 - `current_state/milestone.md` — completed task archive
 - `archive/daily_log.md` — session log
+- `docs/` — **tracked in git, never private.** Holds `product-brief.md`, `prd.md`, `architecture.md` and `adr/` (written by the SDLC skills), plus:
 - `docs/error_log.md` — debugging investigations
 - `.env.example` — all required env vars with placeholder values; always committed; never contains real values
+
+### Step 5a: Move Private Files into Drive and Symlink Them (Autonomous only for files this run created)
+
+Follow `project-storage.md` (auto-loaded universal rule). `current_state/`, `archive/`, `CLAUDE.md` and `PROJECT.md` must end up as **gitignored symlinks** into Google Drive, never as real files in the repo.
+
+```bash
+# Run from the project root
+D="/Users/monireach/Google Drive/My Drive/monireach"
+P="$(basename "$PWD")"
+CREATED_THIS_RUN=""   # fill in ONLY the paths this run just created, e.g. "current_state archive CLAUDE.md PROJECT.md"
+for pair in "current_state:_project_current_state/$P" "archive:_project_archive/$P" \
+            "CLAUDE.md:_project_root/$P/CLAUDE.md" "PROJECT.md:_project_root/$P/PROJECT.md"; do
+  src="${pair%%:*}"; dst="$D/${pair#*:}"
+  if [ -L "$src" ] && [ "$(readlink "$src")" = "$dst" ]; then echo "already set up: $src"; continue; fi
+  if [ -L "$src" ]; then echo "STOP: $src links to $(readlink "$src"), not $dst - ask the user"; continue; fi
+  if [ -e "$dst" ]; then echo "STOP: $dst already exists - ask the user"; continue; fi
+  if [ ! -e "$src" ]; then echo "STOP: $src does not exist - create it first"; continue; fi
+  case " $CREATED_THIS_RUN " in
+    *" $src "*) ;;
+    *) echo "PROPOSE: move existing $src to Drive (tracked in git: $(git ls-files --error-unmatch "$src" >/dev/null 2>&1 && echo yes || echo no))"; continue ;;
+  esac
+  mkdir -p "$(dirname "$dst")" && mv "$src" "$dst" && ln -s "$dst" "$src" && echo "linked: $src"
+done
+```
+
+- `already set up` means the symlink is correct. Nothing to do.
+- A `PROPOSE` line means the file existed before this run. Moving it needs the user's yes (`user-confirmation.md` §6.2). On yes, follow the "Making a file private" block in `project-storage.md`: move, symlink, `git rm --cached` if tracked, and the `.gitignore` line.
+- A `STOP` line means the repo path or Drive path is in an unexpected state. Show the user both paths and ask before touching either copy.
+- **`docs/` is never moved to Drive.** It is tracked in git (public).
+- The `.gitignore` template below already ignores all four paths. If `.gitignore` already exists, append only the missing lines of its "Private files" block; never replace the file.
+- Run the TEST block in `project-storage.md` after `git init` (Step 6), plus this check. Fix any failing line before reporting setup done.
+  ```bash
+  git check-ignore -q docs/x.md && echo "WRONG: docs/ is ignored - it must be tracked" || echo "ok: docs/ tracked"
+  ```
 
 ### Step 5b: Create .claude/rules/ Symlinks (Run Autonomously)
 
@@ -106,14 +174,19 @@ For each selected standard, **run the symlink command directly using the Bash to
 
 ```bash
 # Run from the project root using absolute paths:
-ln -sf "/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/resources/agent_core/rules/project-types/backend-standards.md" ".claude/rules/backend-standards.md"
+S="/Users/monireach/Google Drive/My Drive/monireach/resources/agent_core/rules/project-types/backend-standards.md"
+L=".claude/rules/backend-standards.md"
+mkdir -p .claude/rules
+if [ -L "$L" ] && [ "$(readlink "$L")" = "$S" ]; then echo "already set up: $L"
+elif [ -e "$L" ] || [ -L "$L" ]; then echo "STOP: $L exists but is not the expected link - ask the user"
+else ln -s "$S" "$L" && echo "linked: $L"; fi
 ```
 
-Verify each symlink was created with `ls -la .claude/rules/`.
+Verify each symlink with `ls -la .claude/rules/`.
 
 ### Step 6: Execute Post-Setup Steps Autonomously
 
-After all files are created, execute every setup step using tools. Do NOT print a manual checklist. Ask for permission as you normally would for each tool call. Steps:
+After all files are created, execute every setup step using tools. Do NOT print a manual checklist. Ask for permission as you normally would for each tool call. On a re-run, skip any step whose result already exists: `.git/`, keys already in `.env`, an existing `.env` (never overwrite it), `alembic/`, healthy containers. Steps:
 
 1. **`git init`** — run via Bash if no `.git` directory exists
 
@@ -129,7 +202,15 @@ After all files are created, execute every setup step using tools. Do NOT print 
    Run it: `bash scripts/gen_keys.sh` and capture the output into `.env`.
    If the project does NOT use JWT (nothing in `.env.example` mentions JWT), skip this step.
 
-3. **Copy `.env.example` → `.env`** — copy the example file, then substitute real generated values (e.g., JWT keys) into the `.env` copy.
+3. **Copy `.env.example` → `.env`** — only if `.env` is absent. Copy the example file, then substitute real generated values (e.g., JWT keys) into the `.env` copy.
+   Then move `.env` into Drive and link it back, so it is never local only (`project-storage.md`). A `.env` this run created moves without asking; an existing one is a `PROPOSE`, as in Step 5a:
+   ```bash
+   D="${AGENT_CORE_DIR%/resources/agent_core}"; P="$(basename "$PWD")"
+   for f in .env .env.staging .env.prod; do
+     [ -f "$f" ] && [ ! -L "$f" ] && [ ! -e "$D/_project_root/$P/$f" ] || continue
+     mkdir -p "$D/_project_root/$P" && mv "$f" "$D/_project_root/$P/$f" && ln -s "$D/_project_root/$P/$f" "$f"
+   done
+   ```
 
 4. **[python-fastapi only] Initialize Alembic** — if the stack is `python-fastapi` and `alembic/` does not yet exist, initialize it BEFORE building the Docker image (the Dockerfile COPYs it):
    ```bash
@@ -149,6 +230,60 @@ After all files are created, execute every setup step using tools. Do NOT print 
    ```bash
    sudo sh -c 'echo "127.0.0.1 <project>.local api.<project>.local mail.<project>.local" >> /etc/hosts'
    ```
+
+10. **GitHub remote** — if `git remote get-url origin` fails: ask once which owner (default org `mt-robotics`), then `gh repo create <owner>/<name-in-kebab-case> --private` and `git remote add origin`. The first commit and push wait for the user's yes (`user-confirmation.md` §6.1).
+
+11. **Register for other machines** — add the project to `<Drive>/_project_root/projects.json` as `"<dir>": {"repo": "<owner>/<repo>", "rules": [<the .claude/rules link names>]}`. Edit with `jq`, never replace the file. The server's `proj <dir>` reads this entry to clone and set the project up.
+
+12. **Final check** — `"$AGENT_CORE_DIR/skills/end-session/local-only-check.sh" .`. After the approved commit and push it must exit 0. Report any remaining line.
+
+---
+
+## Non-Coding Path (`research-academic`, `personal`)
+
+Use this path instead of Steps 1–6 when Step 0 chose a non-coding type. The Idempotency Rule still applies to every file.
+
+**Do:**
+1. Confirm the working directory (as in Step 4). Ask only for the project name and one-line description, if not already in `README.md` or `PROJECT.md`.
+2. Create the files below if absent. Existing files are merged, never overwritten.
+   - `CLAUDE.md` — the template below, with the chosen project type
+   - `PROJECT.md` — navigation hub: what it is, current focus, structure, context loading guide, where to find things. Its "Where to Find Things" table must list `docs/` (brief, prd, architecture, adr) once those files exist
+   - `README.md` — public description
+   - `current_state/project_status.md` — the four-section format in `documentation-structure.md §10.3`
+   - `current_state/milestone.md`, `archive/daily_log.md` — the templates in the stack spec below, minus the stack wording
+   - `docs/` — tracked in git, never private. It is filled later by `/ideation`, `/product-spec` and `/technical-consultant`. Add `docs/error_log.md` only if the project has code
+3. Read the SDLC docs in the Integration table above (legacy fallback as stated there). If they exist, offer on the user's yes: their links in `PROJECT.md` "Where to Find Things", the brief's one-line summary in `PROJECT.md` "What it is" if that is empty, and a README description from the brief if `README.md` has none.
+4. Run Step 5a (Drive symlinks for `current_state/`, `archive/`, `CLAUDE.md`, `PROJECT.md`) and its `.gitignore` and `docs/` checks.
+5. `git init` only if `.git/` is absent.
+6. Run Step 6 items 10–12 (GitHub remote, `projects.json` entry, final check). A non-coding project is still a git repo, so the same rule applies: nothing local only.
+
+**Skip:** the coding-universal symlink, `.claude/rules/` standards (Step 5b), Step 2 tool research, Docker and `DOCKER_SETUP.md`, `.env.example` (unless the project needs secrets), test scaffolding, CI, and backend/frontend scaffolding.
+
+**`CLAUDE.md` (non-coding)**
+```markdown
+# CLAUDE.md — <Project Name>
+
+## Project Type
+`research-academic`        <!-- or `personal` -->
+
+---
+
+## Session Initialization
+
+At session start (`initialize`), read in order:
+1. `PROJECT.md` — navigation hub
+2. `current_state/project_status.md` — current progress, next steps
+
+---
+
+## End Session
+
+- Append today's entry to `archive/daily_log.md`
+- Update `current_state/project_status.md`; move completed tasks to `current_state/milestone.md`
+- Update `PROJECT.md` only if structure or focus changed
+```
+
+**Re-run on an existing non-coding repo:** a repo that already has correct symlinks, a `CLAUDE.md` with the right type and the two Session Initialization reads, `PROJECT.md`, `README.md` and the status files must come out unchanged. Report each as "already set up". Only offer what is missing, e.g. links to existing `docs/` files, a missing End Session section in `CLAUDE.md`, or a missing `docs/` row in `PROJECT.md`. Add each one only on the user's yes.
 
 ---
 
@@ -245,6 +380,7 @@ Before creating any file, understand what each one is for. Full rules in `docume
 | `current_state/milestone.md` | Internal | "What exactly was built in each completed task?" | Active tasks or backlog |
 | `archive/daily_log.md` | Internal | "What happened in each session?" | Routine commands or minor steps |
 | `docs/error_log.md` | Internal | "What bugs required deep investigation?" | Simple one-line fixes |
+| `docs/product-brief.md`, `docs/prd.md`, `docs/architecture.md`, `docs/adr/` | Team (tracked) | "What are we building, and why this design?" | Task status, session notes |
 
 ---
 
@@ -290,6 +426,7 @@ Follow `logging-workflow.md §2.5`. Additionally:
 | Task completed | `current_state/milestone.md` |
 | Features, API, tech stack, roadmap | `README.md` |
 | Deployment, env vars | `DOCKER_SETUP.md` |
+| Architecture or stack decision | `docs/architecture.md` + a new ADR in `docs/adr/` (via `/technical-consultant`) |
 ```
 
 **`PROJECT.md`**
@@ -300,7 +437,7 @@ Navigation hub. Read this first every session.
 
 ## What This Project Is
 
-<One-line description from PROJECT_BRIEF.md if available, otherwise from user>
+<One-line description from docs/product-brief.md if available, otherwise from user>
 
 ## Current Focus
 
@@ -318,7 +455,7 @@ Navigation hub. Read this first every session.
 | Infra | Docker + nginx-proxy | |
 | CI/CD | GitHub Actions | |
 
-[Expand this table from TECH_STACK.md if available]
+[Expand this table from docs/architecture.md if available; link each choice to its ADR in docs/adr/]
 
 ## Directory Structure
 
@@ -350,7 +487,11 @@ Navigation hub. Read this first every session.
 │   └── milestone.md
 ├── archive/
 │   └── daily_log.md
-├── docs/
+├── docs/                # tracked in git (public)
+│   ├── product-brief.md # from /ideation
+│   ├── prd.md           # from /product-spec
+│   ├── architecture.md  # from /technical-consultant
+│   ├── adr/             # one decision record per file (NNNN-title.md)
 │   └── error_log.md
 ├── alembic.ini          # Created by `uv run alembic init alembic` in Step 6
 ├── CLAUDE.md
@@ -372,7 +513,9 @@ Navigation hub. Read this first every session.
 | Resuming work | `archive/daily_log.md` (last 50 lines) |
 | Checking task status | `current_state/project_status.md` |
 | Completed task details | `current_state/milestone.md` |
-| Architecture questions | This file + `app/main.py` |
+| Product scope, users | `docs/product-brief.md`, `docs/prd.md` |
+| Architecture questions | `docs/architecture.md` + `app/main.py` |
+| Why a stack choice was made | `docs/adr/` |
 | Docker/env vars | `DOCKER_SETUP.md` |
 
 ## Key Commands
@@ -393,6 +536,10 @@ make shell         # Shell into backend container
 | Active tasks | `current_state/project_status.md` |
 | Completed tasks | `current_state/milestone.md` |
 | Session history | `archive/daily_log.md` |
+| Product brief | `docs/product-brief.md` |
+| Requirements (PRD) | `docs/prd.md` |
+| Architecture | `docs/architecture.md` |
+| Decision records | `docs/adr/` |
 | Debug investigations | `docs/error_log.md` |
 | Docker setup | `DOCKER_SETUP.md` |
 ```
@@ -418,24 +565,38 @@ make shell         # Shell into backend container
 
 ---
 
+## Current State
+
+- Project scaffolded on <YYYY-MM-DD>; nothing built yet.
+- How to run: <command, or "not runnable yet">.
+- **Next:** start the first task in the V1 Task List.
+
 ## Completed Milestones
 
-| Milestone | Date | Tests |
-|-----------|------|-------|
+<details><summary>Full narrative for each entry lives in [`milestone.md`](milestone.md).</summary>
+
+| Milestone | Completed | Tests |
+|-----------|-----------|-------|
 | Project scaffold | <YYYY-MM-DD> | — |
 
----
+</details>
 
-## 🔄 Active Tasks
+## V1 Task List
 
-_None yet — add tasks here as work begins_
+- 🔲 <First task>
 
-## 🔲 Backlog
+## V1 Task Details
 
-- Implement first feature
-- Set up database models
-- Add authentication (if needed)
+### 🔲 <First task>
+
+<details><summary></summary>
+
+[1–3 sentences: what this is and why it matters]
+
+</details>
 ```
+
+This is the closed four-section format of `documentation-structure.md` §10.3. Never add a fifth `##` section.
 
 **`current_state/milestone.md`**
 ```markdown
@@ -1223,9 +1384,13 @@ nginx/logs/
 *.log
 logs/
 
-# ── Archive (keep daily_log.md only) ───────────────────────────────────────────
-archive/*
-!archive/daily_log.md
+# ── Private files: symlinks into Google Drive (project-storage.md) ─────────────
+# No trailing slash - git treats a symlink as a file, so "archive/" never matches.
+# Never add docs/ here - it is tracked (product-brief, prd, architecture, adr).
+/current_state
+/archive
+/CLAUDE.md
+/PROJECT.md
 
 # ── Example / learning files (not production code) ─────────────────────────────
 *_examples.py
@@ -1278,7 +1443,7 @@ jobs:
 ```markdown
 # <Project Name>
 
-<One-line description from PROJECT_BRIEF.md if available>
+<One-line description from docs/product-brief.md if available>
 
 ## Stack
 

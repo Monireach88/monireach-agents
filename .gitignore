@@ -1,1 +1,14 @@
+# Private since PR #1 (project-storage.md)
 /CLAUDE.md
+
+# OS junk
+.DS_Store
+
+# Regenerable: Claude Code downloads these Anthropic skills itself
+/skills/synced
+
+# Deleted-file bin; git history is the backup
+/skills/.trash
+
+# Dated backup snapshots; git history is the backup
+/docs/*_backup_*

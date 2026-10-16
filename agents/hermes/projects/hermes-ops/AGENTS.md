@@ -14,7 +14,7 @@ Hermes runs in Docker, not directly on the host. The long-running container is `
 - Hermes home inside container: `/opt/data/.hermes`
 - Hermes config on host: `/Users/monireach/hermes_configs/.hermes/config.yaml`
 - Hermes secrets on host: `/Users/monireach/hermes_configs/.hermes/.env`
-- Shared agent core: `/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/resources/agent_core`
+- Shared agent core: `/Users/monireach/Google Drive/My Drive/monireach/resources/agent_core`
 
 ## Runtime Model
 

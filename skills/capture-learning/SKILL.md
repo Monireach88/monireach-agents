@@ -40,7 +40,7 @@ Launch both in a single message.
 **Pass in prompt:**
 - The conversation summary from Step 0
 - This skill's file path (so it can read format specs): `[agent_core]/skills/capture-learning/SKILL.md`
-- Deliverables directory: `/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/deliverables`
+- Deliverables directory: `/Users/monireach/Google Drive/My Drive/monireach/deliverables`
 
 **Instructions to include in prompt:**
 
@@ -74,7 +74,7 @@ If no qualifying learnings found → return exactly: "No qualifying learnings fo
 **Pass in prompt:**
 - The conversation summary from Step 0
 - Log-mistake skill path: `[agent_core]/skills/log-mistake/SKILL.md`
-- Target file: `/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/deliverables/my_mistakes.md`
+- Target file: `/Users/monireach/Google Drive/My Drive/monireach/deliverables/my_mistakes.md`
 
 **Instructions to include in prompt:**
 
@@ -211,8 +211,8 @@ When appending:
 ## Path Reference
 
 ```
-agent_core:   /Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/resources/agent_core
-deliverables: /Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/deliverables
+agent_core:   /Users/monireach/Google Drive/My Drive/monireach/resources/agent_core
+deliverables: /Users/monireach/Google Drive/My Drive/monireach/deliverables
 ```
 
 ---

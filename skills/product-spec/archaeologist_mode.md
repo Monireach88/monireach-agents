@@ -11,6 +11,19 @@ This file is the full procedure for `archaeologist` mode. SKILL.md routes here w
 
 **The cardinal rule of this mode:** existing docs are HYPOTHESES, never ground truth. Ground truth = code + schema + running behavior. Every claim in an existing doc is suspect until spot-checked against the code.
 
+**Where the files live:** this mode writes `docs/prd.md` and `docs/architecture.md` (plus `docs/erd.md` via `/design-audit`). All are tracked in git. Run `mkdir -p docs` before the first write.
+
+---
+
+## Step 0 pre-check: Existing Output (re-run safety)
+
+Before Phase 0, check for this mode's own output. Never silently overwrite it.
+
+- **Absent** → run the full procedure.
+- **`docs/prd.md` or `docs/architecture.md` exists** → read it, tell the user in 1–2 lines what it covers, and enter UPDATE mode: refine in place and keep content that still passes the trust audit. Your own earlier output is a hypothesis too — it goes through the 0.3 trust audit like any other doc.
+- **Legacy root file** (`PRODUCT_SPEC.md` or `ARCHITECTURE.md`) → say so and propose `mkdir -p docs && git mv <old> docs/<new>` (plain `mv` if not a git repo). Move only after the user says yes, then continue in UPDATE mode. A legacy `TECH_STACK.md` is `/tc`'s file — read it as an existing doc and tell the user once to migrate it by re-running `/tc`.
+- **Both old and new copies exist** → stop and ask which one is current. Never keep two copies, and never delete either without confirmation.
+
 ---
 
 ## Project Shape
@@ -90,13 +103,13 @@ Call `/design-audit` (it owns ERD generation in Pass 1): it produces `docs/erd.m
 Per the detected shape: web service → export the live OpenAPI spec (emit-tier A frameworks export for free; tier B needs annotations — missing routes are `setup-gap`/drift findings; tier C → there is none, note it). CLI → capture `--help` as the contract. Library → extract the documented public API. Drift (routes in code not in the exported spec) is a `/design-audit` touchpoint-3 finding.
 
 ### Slot 2 — SRS / requirements (Class 2, derived — reverse-generate, then verify)
-Run the SAME AI-generation step as author mode Step 2, but sourced from the CODE: entities from the schema, CRUD paths from exposed surfaces, actors from auth/role logic, journeys reconstructed from the routes a real user would traverse. Write it into `PRODUCT_SPEC.md` §§1–6. Every reconstructed claim is Class 2 — cite the code location it was derived from. This is the same artifact author mode produces, reached backwards.
+Run the SAME AI-generation step as author mode Step 2, but sourced from the CODE: entities from the schema, CRUD paths from exposed surfaces, actors from auth/role logic, journeys reconstructed from the routes a real user would traverse. Write it into `docs/prd.md` §§1–6. Every reconstructed claim is Class 2 — cite the code location it was derived from. This is the same artifact author mode produces, reached backwards.
 
 ### Slot 1 — BRD / the *why* (Class 3, elicited — NEVER derivable)
-Interview the owner for §0 of PRODUCT_SPEC.md: the problem, who pays, the business goal, the success metric. If the owner is unavailable, mark each line `[inferred — UNVERIFIED]` — never present an inferred *why* as fact. A completed project whose owner is gone still gets a §0; it is just honestly flagged as unverified.
+Interview the owner for §0 of `docs/prd.md`: the problem, who pays, the business goal, the success metric. If the owner is unavailable, mark each line `[inferred — UNVERIFIED]` — never present an inferred *why* as fact. A completed project whose owner is gone still gets a §0; it is just honestly flagged as unverified.
 
-### Slot 3 — ARCHITECTURE.md (client-facing — archaeologist mode's slot-3 name)
-In author mode slot 3 = TECH_STACK.md + ADR log (internal). In archaeologist mode it is `ARCHITECTURE.md` (client-facing), with these LITERAL sections, each tagged by epistemic class:
+### Slot 3 — docs/architecture.md (client-facing in this mode)
+In author mode slot 3 = `docs/architecture.md` + `docs/adr/`, written by `/tc`. In archaeologist mode it is `docs/architecture.md` written client-facing, with these LITERAL sections, each tagged by epistemic class. If the file already exists, add missing sections in place rather than replacing it:
 1. **System overview** — one Mermaid diagram.
 2. **Module / service map** — [Class 1].
 3. **Data flow** — [Class 2, cited].
@@ -127,7 +140,7 @@ Per-project optional; for a frontend project, point at the existing components/d
 
 ## Phase 2 — Coverage Footer
 
-Close PRODUCT_SPEC.md with the 8-slot coverage footer (same table as author mode), each slot marked `file: <name>` / `derivable` / `consciously skipped`, plus its dominant epistemic class. This footer is the proof the backfill is complete — a blank slot is a conscious skip recorded, never an oversight.
+Close `docs/prd.md` with the 8-slot coverage footer (same table as author mode), each slot marked `file: <name>` / `derivable` / `consciously skipped`, plus its dominant epistemic class. This footer is the proof the backfill is complete — a blank slot is a conscious skip recorded, never an oversight.
 
 ---
 

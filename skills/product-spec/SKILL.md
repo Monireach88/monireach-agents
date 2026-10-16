@@ -1,6 +1,6 @@
 ---
 name: product-spec
-description: Use when the user invokes "/product-spec". Requirements-engineering skill — produces PRODUCT_SPEC.md (actors, entities, CRUD matrix, journeys, NFRs, non-goals) via dual independent generation (owner skeleton + AI) and a mechanical diff. Runs AFTER /ideation (PROJECT_BRIEF.md) and BEFORE /tc (TECH_STACK.md). Guards against the flaw class where a product's WHAT was never specified, so whole actors or entity lifecycles silently go missing.
+description: Use when the user invokes "/product-spec". Requirements-engineering skill — produces docs/prd.md (actors, entities, CRUD matrix, journeys, NFRs, non-goals) via dual independent generation (owner skeleton in archive/spec_skeleton.md + AI) and a mechanical diff. Runs AFTER /ideation (docs/product-brief.md) and BEFORE /tc (docs/architecture.md + docs/adr/). Safe to re-run: updates an existing PRD in place. Guards against the flaw class where a product's WHAT was never specified, so whole actors or entity lifecycles silently go missing.
 version: 1.1.0
 ---
 
@@ -19,20 +19,31 @@ You are now operating as a requirements engineer. Your job is NOT to write code 
 
 **Modes:** **author mode** (default — solo projects, the user owns all roles, full Steps 0–5 below) and **archaeologist mode** (documentation backfill for a finished project) are implemented. `consumer` mode (intake checklist for contributing to someone else's project) is defined in the harness design but NOT implemented in this version — if the user asks for it, say exactly that; do not improvise a partial version.
 
-**Archaeologist mode:** when invoked with `--mode=archaeologist`, do NOT follow Steps 0–5 below — instead read `archaeologist_mode.md` in this skill's own directory and follow that procedure end to end. It governs reconnaissance + trust audit, the epistemic three-class gate, and backfill of the 8 SDLC slots by the derivability law. (Author mode Step 2 can also derive a spec retroactively from code, but archaeologist mode is the full documentation engagement — reconnaissance, ARCHITECTURE.md, setup docs, FINDINGS.md — not just the spec.)
+**Archaeologist mode:** when invoked with `--mode=archaeologist`, do NOT follow Steps 0–5 below — instead read `archaeologist_mode.md` in this skill's own directory and follow that procedure end to end. It governs reconnaissance + trust audit, the epistemic three-class gate, and backfill of the 8 SDLC slots by the derivability law. (Author mode Step 2 can also derive a spec retroactively from code, but archaeologist mode is the full documentation engagement — reconnaissance, `docs/architecture.md`, setup docs, FINDINGS.md — not just the spec.)
 
 **Position in the pipeline:**
 
 ```
-Session 1: /ideation        → PROJECT_BRIEF.md   (business layer — AI-led elicitation)
-Session 2: owner writes SPEC_SKELETON.md, then runs /product-spec → PRODUCT_SPEC.md
-Session 3: /tc              → TECH_STACK.md      (technology layer)
+Session 1: /ideation        → docs/product-brief.md   (business layer — AI-led elicitation)
+Session 2: archive/spec_skeleton.md is complete (/ideation fills [DERIVED] and interviews the owner for [OWNER]), then /product-spec → docs/prd.md
+Session 3: /tc              → docs/architecture.md + docs/adr/   (technology layer)
 Then: /start-local-dev → /vibe-code
 ```
 
-Sessions are separate by design. If PROJECT_BRIEF.md exists, read it: §0 Why condenses from the Brief's problem/business-model sections; actors seed from its Persona section. **Never re-elicit what the Brief already answers.** If no Brief exists, warn once ("running without a Project Brief means the Why section is built from unvalidated assumptions — consider /ideation first") and proceed without blocking.
+**Where the files live:** `docs/product-brief.md` and `docs/prd.md` are project documentation, tracked in git. `archive/spec_skeleton.md` is the owner's private working draft (`archive/` is a gitignored private folder).
+
+Sessions are separate by design. If `docs/product-brief.md` exists, read it (if only a legacy `PROJECT_BRIEF.md` exists in the project root, read that and tell the user once to migrate it by re-running `/ideation`): §0 Why condenses from the Brief's problem/business-model sections; actors seed from its Persona section. **Never re-elicit what the Brief already answers.** If no Brief exists, warn once ("running without a Project Brief means the Why section is built from unvalidated assumptions — consider /ideation first") and proceed without blocking.
 
 ---
+
+## Step 0 pre-check: Existing Output (re-run safety)
+
+Before anything else, check for this skill's own output. Never silently overwrite it.
+
+- **Absent** → run the full procedure from Step 0.
+- **`docs/prd.md` exists** → read it, tell the user in 1–2 lines what it covers, and enter UPDATE mode. Ask what has changed and edit only the affected sections in place, under the Spec Evolution rule below. Keep the header's Generation and Blind-spots values. The skeleton gate and dual generation apply to a first generation only. If nothing has changed, change nothing.
+- **Legacy `PRODUCT_SPEC.md` in the project root** → say so and propose `mkdir -p docs && git mv PRODUCT_SPEC.md docs/prd.md` (plain `mv` if the project is not a git repo). Move only after the user says yes. After the move, update references to the old filename inside the PRD and in `README.md` / `PROJECT.md`. Then continue in UPDATE mode.
+- **Both old and new copies exist** → stop and ask which one is current. Never keep two copies, and never delete either without confirmation.
 
 ## Step 0: Project Shape, Lane, and Ownership Declaration
 
@@ -46,6 +57,8 @@ Before anything else, establish three facts. Ask only for what cannot be detecte
 | Stranger journey | visitor → signed-up user | zero state → first useful run | first import → first value | empty input → first output |
 | Persistent entity | DB row/document | config/state files | (often none) | datasets/artifacts |
 
+**Non-software project** (e.g. a research thesis): pick the closest column — usually Pipeline (input data → results) — and mark slots that do not apply as consciously skipped.
+
 If the project has **no persistent entities** (stateless library, pure-transform pipeline): the CRUD matrix is **not applicable — consciously skipped**, recorded as such in §2/§3 of the spec. Never force a meaningless artifact.
 
 **2. Lane** — full (default) or lite. Lite is only for projects the owner explicitly declares low-stakes (throwaway scripts, experiments). Portfolio and production projects always use the full lane. The declaration goes in the spec header — an explicit choice, never a silent default.
@@ -56,18 +69,19 @@ If the project has **no persistent entities** (stateless library, pure-transform
 
 ## Step 1: Enforcement Gate — Owner Skeleton First
 
-**Gate (mechanical):** check that `SPEC_SKELETON.md` exists in the project root.
+**Gate (mechanical):** check that `archive/spec_skeleton.md` exists.
 
+- **Legacy location** — absent there, but `SPEC_SKELETON.md` exists in the project root → it counts as existing. Say so and propose `mv SPEC_SKELETON.md archive/spec_skeleton.md` (plus `git rm --cached SPEC_SKELETON.md` if it was tracked). Move only after the user says yes. Do not read its content either way.
 - **Exists** → proceed to Step 2. **Do NOT read its content yet** — existence is checked, content stays unseen until Step 3 (the diff is only meaningful if the AI generation was independent).
-- **Missing** → REFUSE to generate. Print the skeleton template below, explain what to create, and stop. The owner writes it by hand — tables and arrows only, no prose required (writing friction must stay near zero).
-- **`--ai-first` passed** → proceed without the skeleton, and record in the PRODUCT_SPEC.md header: `Generation: AI-first (<one-line reason>, <date>)`. **The reason is mandatory on every use** — if the user gives no reason, ask for one before proceeding. This prevents `--ai-first` from silently becoming the default.
+- **Missing** → REFUSE to generate. Print the skeleton template below, tell the owner to save it as `archive/spec_skeleton.md`, and stop. The owner writes it by hand — tables and arrows only, no prose required (writing friction must stay near zero).
+- **`--ai-first` passed** → proceed without the skeleton, and record in the `docs/prd.md` header: `Generation: AI-first (<one-line reason>, <date>)`. **The reason is mandatory on every use** — if the user gives no reason, ask for one before proceeding. This prevents `--ai-first` from silently becoming the default.
 
-**Skeleton-commit-first:** if the project is a git repository, the owner's skeleton is committed before AI generation runs (ask the owner to commit it, or stage + ask per the commit-confirmation workflow). This freezes the owner's unassisted attempt so the diff in Step 3 is honest.
+**Skeleton-freeze-first:** `archive/spec_skeleton.md` is private and not tracked in git, so a commit cannot freeze it. Instead, the owner confirms the skeleton is final before AI generation runs. Then run `shasum -a 256 archive/spec_skeleton.md` and record the hash in the `docs/prd.md` header (`Skeleton SHA-256: <hash>, <date>`). Re-run the hash before the Step 3 diff; a different hash means the skeleton changed after AI generation, so the diff is not honest — stop and tell the owner. This freezes the owner's unassisted attempt so the diff in Step 3 is honest.
 
-**SPEC_SKELETON.md template (print verbatim when the gate refuses):**
+**`archive/spec_skeleton.md` template (print verbatim when the gate refuses):**
 
 ```markdown
-# SPEC_SKELETON — <project>
+# Spec skeleton — <project>
 <!-- Fill tables only. No prose needed. Blank cells are fine — they become explicit decisions later. -->
 
 ## Actors
@@ -95,15 +109,15 @@ If the project has **no persistent entities** (stateless library, pure-transform
 <!-- Anything you couldn't decide. -->
 ```
 
-The skeleton is raw material, not a deliverable — disposable after PRODUCT_SPEC.md is written.
+The skeleton is raw material, not a deliverable — it stays private in `archive/` and is disposable after `docs/prd.md` is written.
 
 ---
 
 ## Step 2: AI Independent Generation
 
-Generate your OWN version of the same five structures (actors, entities, CRUD matrix, journeys, plus NFR slots) **without looking at SPEC_SKELETON.md**:
+Generate your OWN version of the same five structures (actors, entities, CRUD matrix, journeys, plus NFR slots) **without looking at `archive/spec_skeleton.md`**:
 
-- **Greenfield:** from PROJECT_BRIEF.md plus a requirements conversation with the owner about anything the Brief doesn't answer.
+- **Greenfield:** from `docs/product-brief.md` plus a requirements conversation with the owner about anything the Brief doesn't answer.
 - **Retroactive (existing codebase):** from the code — models/schema for entities, exposed surfaces for paths, auth flows for actors.
 
 Forced sub-checks while generating (these catch the historically missed items):
@@ -118,7 +132,7 @@ Forced sub-checks while generating (these catch the historically missed items):
 
 ## Step 3: Mechanical Diff
 
-Now read SPEC_SKELETON.md. Diff the two generations mechanically — enumerate, never skim:
+Now read `archive/spec_skeleton.md`. Diff the two generations mechanically — enumerate, never skim:
 
 ```
 for each actor:            in owner's? in AI's? in both?
@@ -134,17 +148,17 @@ Classify every difference:
 
 Present the diff as a table, discuss, merge. **Blank cells and product decisions are the owner's** — for each remaining blank cell, the owner either fills it or consciously moves it to Non-goals ("NOT in V1 because X — revisit when Y"). Never decide a product question yourself; never write a bare "NO".
 
-**Blind-spot metric:** log the owner-missed count in the PRODUCT_SPEC.md header (`Blind-spots at generation: N`). Across projects, this number trending down is the evidence the owner's requirements-engineering skill is building; trending flat is a signal to discuss.
+**Blind-spot metric:** log the owner-missed count in the `docs/prd.md` header (`Blind-spots at generation: N`). Across projects, this number trending down is the evidence the owner's requirements-engineering skill is building; trending flat is a signal to discuss. **Exception:** if the skeleton's Actors and Entities sections are marked `[DERIVED]` (written by `/ideation`, not by the owner), the owner did not write them, so the count says nothing about the owner. Log `Blind-spots at generation: n/a (skeleton [DERIVED] by AI)` instead. Still run the diff and merge as above, because it still catches differences.
 
 ---
 
-## Step 4: Write PRODUCT_SPEC.md
+## Step 4: Write docs/prd.md
 
-2–3 pages max (bounded artifact — completeness of structure, not exhaustiveness of prose). Instantiate THIS template — never invent structure:
+Save the spec as `docs/prd.md` (run `mkdir -p docs` first). It is tracked in git. 2–3 pages max (bounded artifact — completeness of structure, not exhaustiveness of prose). Instantiate THIS template — never invent structure:
 
 ```markdown
-# PRODUCT_SPEC — <project>
-> Generation: <owner-first | AI-first (reason, date)> | Lane: <full | lite> | Blind-spots at generation: <N>
+# PRD — <project>
+> Generation: <owner-first | AI-first (reason, date)> | Lane: <full | lite> | Blind-spots at generation: <N | n/a (skeleton [DERIVED] by AI)> | Skeleton SHA-256: <hash, date | n/a for AI-first>
 ## 0. Why
 <problem; who pays; goal>  Success metric: <measurable target>
 ## 1. Actors
@@ -172,16 +186,16 @@ Section rules:
 
 | # | Slot | Typical mapping (solo author mode) |
 |---|---|---|
-| 1 | Business case (why) | PRODUCT_SPEC.md §0 |
-| 2 | Requirements (what) | PRODUCT_SPEC.md §§1–6 |
-| 3 | Architecture | TECH_STACK.md + ADR log |
+| 1 | Business case (why) | `docs/prd.md` §0 |
+| 2 | Requirements (what) | `docs/prd.md` §§1–6 |
+| 3 | Architecture | `docs/architecture.md` + `docs/adr/` |
 | 4 | Data model / ERD | derivable from models (automate, never hand-author) |
 | 5 | API contract | framework-generated (e.g., OpenAPI) for web services; `--help` for CLI; documented public API for libraries |
 | 6 | UI/UX spec | per-project optional |
 | 7 | Backlog | project_status.md |
 | 8 | Code + tests | TDD |
 
-**Canonical-source rule:** PRODUCT_SPEC.md is canonical for WHAT (actors/entities/journeys). README and PROJECT.md may link to it but never restate those sections — restated copies drift.
+**Canonical-source rule:** `docs/prd.md` is canonical for WHAT (actors/entities/journeys). README and PROJECT.md may link to it but never restate those sections — restated copies drift.
 
 **Multi-repo products:** the spec lives in the primary repo (usually the backend); sibling repos carry a one-line pointer in their PROJECT.md. Journeys MAY span repos (the money journey usually does); tasks never do — each repo's backlog holds only its own tasks.
 
@@ -208,13 +222,28 @@ For explicitly declared low-stakes projects only:
 
 ## Spec Evolution (post-V1 — state this in the final handoff)
 
-PRODUCT_SPEC.md is a living document with **spec-first change discipline**: any scope or behavior change updates the spec BEFORE the code changes. The owner updates it at phase planning whenever new tasks change actors, entities, or journeys. Under this discipline, code-vs-spec drift found by `/design-audit` is always a regression signal, never a false positive from legitimate evolution. After any process lapse, `/design-audit --resync` re-baselines and records the lapse in the spec header — the process must always be cheaper to re-enter than to abandon.
+`docs/prd.md` is a living document with **spec-first change discipline**: any scope or behavior change updates the spec BEFORE the code changes. The owner updates it at phase planning whenever new tasks change actors, entities, or journeys. Under this discipline, code-vs-spec drift found by `/design-audit` is always a regression signal, never a false positive from legitimate evolution. After any process lapse, `/design-audit --resync` re-baselines and records the lapse in the spec header — the process must always be cheaper to re-enter than to abandon.
+
+---
+
+## Pitfalls
+
+### Owner refuses the skeleton gate
+
+Some owners (especially those using AI agents for end-to-end execution) will flatly refuse to write `archive/spec_skeleton.md` — "I am not gonna do it, it's you who will do for me." This is a legitimate working style, not a process failure. When the owner signals this:
+
+1. **Do NOT push back or re-explain the gate's value.** They heard you. They rejected it.
+2. **Immediately offer `--ai-first`** as the path forward: "Understood. I'll run `/product-spec --ai-first` — you delegate full generation to me."
+3. **Record the reason** in the spec header: `Generation: AI-first (owner delegated full generation, <date>)`.
+4. **Still run the birth audit** (Step 5) — structural checks catch gaps even without the dual-generation diff.
+
+The `--ai-first` flag exists precisely for this scenario. Use it proactively when the owner signals they want full delegation. The blind-spot metric won't have an owner skeleton to diff against (record `N/A`), but the completeness critic and structural checks still provide value.
 
 ---
 
 ## What NOT To Do
 
-- Do NOT read SPEC_SKELETON.md before your own generation is complete — that destroys the diff's value.
+- Do NOT read `archive/spec_skeleton.md` before your own generation is complete — that destroys the diff's value.
 - Do NOT fill blank matrix cells or make product decisions yourself — surface them; the owner decides.
 - Do NOT proceed under `--ai-first` without a recorded reason.
 - Do NOT write prose-heavy specs — tables and arrows; 2–3 pages hard bound.
@@ -228,4 +257,4 @@ PRODUCT_SPEC.md is a living document with **spec-first change discipline**: any 
 - User invokes `/product-spec` (any mode)
 - User says "write the product spec" / "spec out what this product does"
 - User says "document this finished project" / "backfill the docs" / "write docs for this completed codebase" → archaeologist mode
-- /ideation hands off with a finished PROJECT_BRIEF.md and the user continues to the spec step
+- /ideation hands off with a finished `docs/product-brief.md` and the user continues to the spec step

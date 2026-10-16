@@ -20,7 +20,7 @@ The loop is domain-neutral. The work may be software (a backlog, a bug, a featur
 **Level 1 — Planned project (state-backed dev):**
 `current_state/project_status.md` exists AND has a target section (active version/phase) with: a task checklist where every entry carries a 🔲/🔄 symbol; a detail section per substantive task; `**Acceptance:**` Gherkin blocks on behavior-changing tasks (their absence is a WARNING, not a rejection — name the tasks that lack them).
 
-**Level 2 — Specified project:** `PRODUCT_SPEC.md` (or `PROJECT_BRIEF.md` + an equivalent spec) exists and the instruction maps to specific spec sections naming a bounded deliverable.
+**Level 2 — Specified project:** `docs/prd.md` (or `docs/product-brief.md` + an equivalent spec) exists and the instruction maps to specific spec sections naming a bounded deliverable. If only the legacy root files exist (`PRODUCT_SPEC.md`, `PROJECT_BRIEF.md`), read them instead and add a WARNING saying they should be migrated by re-running the producer skill.
 
 **Level 3 — Crystal-clear instruction (no planning files — the common case for one-off dev and all non-dev work):** the instruction itself passes ALL of:
 - **Observable end state** — completion is checkable by reading a file, running a command, or inspecting a produced artifact ("tests pass", "endpoint returns X", "every claim in the summary cites a source", "two consecutive search rounds surface nothing new"), NOT by vibes ("make it better", "production-ready", "research it well").
@@ -36,6 +36,8 @@ Even when a level passes, certify ONE more thing before READY: **for every unit,
 - non-dev → artifact-against-criteria with traceable evidence, or a saturation condition (verifier: `adversarial-verifier-general`)
 
 If any unit's "done" reduces to "the agent says so" with nothing independently checkable, REJECT — and the rejection question is: *"What observable evidence marks <unit> done?"* This gate is the source of the loop's trust promise; do not wave it through.
+
+**Named pattern — new integration surfaces.** If a unit registers, mounts, or wires up a new integration surface (a server, an endpoint, a transport, a handler), object-level introspection ("the object exists," "the list contains N items") is NOT a sufficient done-check on its own — it can pass while the surface is completely unreachable in practice. The done-check for such a unit must require exercising it end-to-end over its real protocol/transport with real data. Name this explicitly in DONE_CHECK when it applies; do not let a plausible-sounding introspection check stand in for reachability.
 
 ## Rules
 
@@ -53,7 +55,7 @@ TARGET: <work-source pointer — exact project_status.md section heading, or "de
 TASKS: <ordered list of actionable work-set units with dependencies noted> | n/a
 DONE_CHECK: <how each unit is verified + which verifier: adversarial-verifier | adversarial-verifier-general> | n/a
 WARNINGS:
-- <e.g. tasks lacking AC blocks; missing spec at Level 3>
+- <e.g. tasks lacking AC blocks; missing spec at Level 3; legacy spec files read at Level 2>
 QUESTIONS:
 - <only when REJECT: the specific questions whose answers would make this READY — including any "what evidence marks X done?">
 ```

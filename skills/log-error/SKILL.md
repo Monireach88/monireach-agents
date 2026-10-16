@@ -26,7 +26,7 @@ Use `/log-mistake` for careless one-liners (typos, wrong parameter, wrong method
 
 **Global index** (one-liner row goes here):
 ```
-/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/deliverables/software_ai_engineering/error_log_index.md
+/Users/monireach/Google Drive/My Drive/monireach/deliverables/software_ai_engineering/error_log_index.md
 ```
 
 ---

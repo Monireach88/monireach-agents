@@ -186,11 +186,32 @@ Use **AskUserQuestion** (Yes/No): "Merge PR #<n> once CI is green?"
    ```
    gh pr merge <pr> --squash --delete-branch
    ```
-3. Sync local `development` and remove the local feature branch:
-   ```
+3. **Verify the PR was actually merged on GitHub first** — check the PR status
+   or `gh pr view <pr> --json state`. Do NOT assume the merge succeeded just
+   because you ran the command.
+
+   **Only after confirming the merge**, sync local branches:
+   ```bash
    git switch development && git pull
    git branch -d <feature-branch>
    ```
+
+   **Pitfall — premature branch switch:** Do NOT switch back to `development`
+   before the PR is actually merged. Verify on GitHub first. Switching early
+   leaves the user on the wrong branch with a clean working tree — they'll
+   wonder where their changes went and may re-do work that was already committed.
+   If you already switched early by mistake: apologize, switch back immediately
+   (`git checkout <feature-branch>`), and explain what happened.
+
+   **Pitfall — never manually deploy or edit server files:** After pushing a
+   feature branch and opening a PR, do NOT manually build Docker images, `scp`
+   files, run `docker compose up`, or edit config files directly on the
+   production server. The CI/CD pipeline (this project: `deploy-prod.yml` on
+   push to `main`) is the single source of truth for deployment. Manual server
+   edits cause git merge conflicts when the pipeline pulls. If the server needs
+   a hotfix before CI/CD runs, tell the user and let them decide — never take
+   it upon yourself. If you already edited a file on the server: discard the
+   local change (`git checkout -- <file>`), pull, and restart the service.
 
 ---
 

@@ -1,22 +1,30 @@
 {
   "permissions": {
-    "additionalDirectories": [
-      "~/projects",
-      "~/.claude",
-      "/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach"
-    ],
-    "deny": [
-      "Read(~/.ssh/**)",
-      "Read(~/.aws/**)",
-      "Read(~/.gnupg/**)",
-      "Read(**/*.pem)",
-      "Read(**/*.key)",
-      "Read(**/id_rsa*)",
-      "Read(**/id_ed25519*)",
-      "Read(**/credentials*)"
+    "allow": [
+      "mcp__claude_ai_ClickUp__clickup_update_task",
+      "mcp__claude_ai_ClickUp__clickup_create_comment",
+      "Write(//Users/monireach/Library/CloudStorage/GoogleDrive-*/My Drive/monireach/_project_archive/**)",
+      "Edit(//Users/monireach/Library/CloudStorage/GoogleDrive-*/My Drive/monireach/_project_archive/**)",
+      "Write(//Users/monireach/Library/CloudStorage/GoogleDrive-*/My Drive/monireach/_project_current_state/**)",
+      "Edit(//Users/monireach/Library/CloudStorage/GoogleDrive-*/My Drive/monireach/_project_current_state/**)",
+      "Write(//Users/monireach/projects/*/archive/**)",
+      "Edit(//Users/monireach/projects/*/archive/**)",
+      "Bash(git push:*)",
+      "Bash(gh pr:*)"
     ]
   },
+  "model": "opus[1m]",
   "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v afplay >/dev/null && afplay /System/Library/Sounds/Glass.aiff || true"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
@@ -28,26 +36,86 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.claude/hooks/settings-link-check.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   },
-  "statusLine": {
-    "type": "command",
-    "command": "/Users/monireach/.claude/statusline-command.sh"
-  },
   "enabledPlugins": {
-    "codex@openai-codex": true
+    "warp@claude-code-warp": true,
+    "cloudflare@cloudflare": false,
+    "typesafe@typesafe-ai": true
   },
   "extraKnownMarketplaces": {
-    "openai-codex": {
+    "claude-code-warp": {
       "source": {
         "source": "github",
-        "repo": "openai/codex-plugin-cc"
+        "repo": "warpdotdev/claude-code-warp"
+      }
+    },
+    "cloudflare": {
+      "source": {
+        "source": "github",
+        "repo": "cloudflare/skills"
+      }
+    },
+    "typesafe-ai": {
+      "source": {
+        "source": "github",
+        "repo": "typesafe-ai/skills"
       }
     }
   },
-  "advisorModel": "opus",
+  "modelSettings": {
+    "claude-opus-5": {
+      "effortLevel": "medium"
+    },
+    "claude-opus-5-5": {
+      "effortLevel": "medium"
+    }
+  },
+  "tui": "fullscreen",
+  "skipWorkflowUsageWarning": true,
+  "autoCompactEnabled": true,
+  "agentPushNotifEnabled": true,
+  "autoMode": {
+    "environment": [
+      "### Org-wide",
+      "**Organization**: None configured",
+      "**Cloud provider(s)**: Google Cloud (GCP) — project referenced via GCP_PROJECT_ID; Vertex AI / Gemma-4 MaaS used for model serving",
+      "**Repository visibility**: Private (rermork-ngo/khmer-llm, confirmed via gh)",
+      "**Internal sharing / snippet hosting**: None configured — treat public paste/gist services as outside the trust boundary",
+      "**Secrets management**: Google Secret Manager (referenced in .env.example for CHAT_API_KEY in production); gcloud secrets marker found in config scan",
+      "**Default / protected branches**: Default branch unknown (origin/HEAD unset); no protected branches listed via gh — note rulesets were not queryable, so absence is not confirmed unprotected",
+      "**CI/CD deploy targets**: None configured",
+      "**Network posture**: None configured",
+      "**Source control**: The trusted repo (rermork-ngo/khmer-llm on github.com) and its origin remote only",
+      "**Trusted internal domains**: None configured",
+      "**Trusted cloud buckets**: None configured",
+      "**Key internal services**: Google Gemini API and Vertex AI (Gemma-4 MaaS) endpoints as referenced in this repo's .env.example; Hugging Face model endpoints (router.huggingface.co) for SeaLLMs",
+      "**Internal package registry**: None configured",
+      "**Sensitive data locations & audiences**: .env and .env.example (API keys/tokens: GOOGLE_API_KEY, HF_TOKEN, GCP_PROJECT_ID, CHAT_API_KEY) — credentials, share only with audiences cleared for this project's secrets",
+      "**Data retention / declassification**: None configured",
+      "**Sensitive remote targets**: any namespace, host, or container whose name carries `prod` or `production` as a whole word or name segment",
+      "**Protected deployment namespaces / environments**: None configured — fall back to the Sensitive remote targets heuristic",
+      "**Protected IaC scopes**: IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries `prod` or `production` as a whole word or name segment",
+      "### User-specific",
+      "**Primary use of Claude Code**: software development",
+      "**Trusted repo**: /Users/monireach/projects/kh_ai_model, remote origin github.com:rermork-ngo/khmer-llm.git (private) — confidential material (secrets, .env values) is never cleared into this repo regardless of visibility",
+      "**Org-specific CLIs**: None configured",
+      "routine under /Users/monireach/projects/kh_ai_model/ prefix qualifier applies to file and git operations scoped to this repo"
+    ]
+  },
   "skipDangerousModePermissionPrompt": true,
-  "theme": "dark",
-  "autoCompactEnabled": false,
-  "voiceEnabled": true
+  "env": {
+    "AGENT_CORE_DIR": "/Users/monireach/Google Drive/My Drive/monireach/resources/agent_core"
+  }
 }

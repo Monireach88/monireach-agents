@@ -18,7 +18,7 @@ User provides a new job, promotion, role change, or career update — either as 
 |---|---|
 | CV | `/Users/monireach/projects/portfolio/cv/Monireach_Tang_CV.html` |
 | Website | `/Users/monireach/projects/portfolio/index.html` |
-| LinkedIn | `/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/cv/linkedin_profile.md` |
+| LinkedIn | `/Users/monireach/Google Drive/My Drive/monireach/cv/linkedin_profile.md` |
 
 ---
 

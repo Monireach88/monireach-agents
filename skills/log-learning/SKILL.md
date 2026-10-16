@@ -13,7 +13,7 @@ Propose one entry for `daily_learnings.md` based on what was just learned or don
 ## File
 
 ```
-/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/deliverables/daily_learnings.md
+/Users/monireach/Google Drive/My Drive/monireach/deliverables/daily_learnings.md
 ```
 
 ---
@@ -138,7 +138,7 @@ State the entry title added. One line. No other output.
 ### Files
 
 ```
-/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/deliverables/software_ai_engineering/coding_patterns.md
+/Users/monireach/Google Drive/My Drive/monireach/deliverables/software_ai_engineering/coding_patterns.md
 ```
 
 ### Entry Format (written to coding_patterns.md)
