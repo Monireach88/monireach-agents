@@ -8,7 +8,9 @@
       "Write(//Users/monireach/Library/CloudStorage/GoogleDrive-*/My Drive/monireach/_project_current_state/**)",
       "Edit(//Users/monireach/Library/CloudStorage/GoogleDrive-*/My Drive/monireach/_project_current_state/**)",
       "Write(//Users/monireach/projects/*/archive/**)",
-      "Edit(//Users/monireach/projects/*/archive/**)"
+      "Edit(//Users/monireach/projects/*/archive/**)",
+      "Bash(git push:*)",
+      "Bash(gh pr:*)"
     ]
   },
   "model": "opus[1m]",
