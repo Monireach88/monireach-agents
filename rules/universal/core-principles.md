@@ -57,6 +57,31 @@ Violation pattern to avoid: searching for `🔲`, reading only the first section
 
 ---
 
+## §3.5 A Problem Comes With a Fix (CRITICAL)
+
+**TRIGGER:** you are about to mention a problem, risk, caveat, or open question — or to ask him something.
+
+```
+1. Does it change what he or I should do NOW?
+   No  -> do not mention it. If it matters later, write it in the
+          task's notes in project_status.md.
+   Yes -> say the problem and the fix together:
+          "X fails because Y. Fix: Z."  Never a problem alone.
+2. Decide it yourself from the code, the docs and sensible defaults.
+   Ask him only what only he can decide (user-confirmation.md §6.4),
+   or what you could not find out. Ask in the form of
+   plain-language.md §5: one decision, with your recommendation.
+3. Side questions (not the main task): one recommendation and its
+   one real tradeoff. Then stop. Do not offer the next option or the
+   next layer until he asks for it.
+```
+
+**TEST:** every problem in the draft has a "Fix:" or a "Next:". Every list of options has a recommendation.
+
+**ON FAIL:** add the fix, or delete the problem.
+
+---
+
 ## §3.6 Violation Repair (CRITICAL)
 
 **TRIGGER:** you notice you broke a rule, or the user points one out.

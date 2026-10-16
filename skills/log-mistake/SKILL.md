@@ -13,7 +13,7 @@ Immediately log one or more careless mistakes to my_mistakes.md.
 ## File
 
 ```
-/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/deliverables/my_mistakes.md
+/Users/monireach/Google Drive/My Drive/monireach/deliverables/my_mistakes.md
 ```
 
 ---

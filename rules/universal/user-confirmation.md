@@ -45,3 +45,32 @@ If the reply is ambiguous, ask exactly once: **"Commit? yes/no"**. Never infer a
 - Do NOT poll, monitor, or retry the same command while it is still running
 - If the output file is missing or empty, that does NOT mean the task failed — it may still be running
 - Violating this rule spawns duplicate processes that consume RAM and produce conflicting results
+
+---
+
+## §6.4 Housekeeping Is Mine — Never Hand It to the User (CRITICAL)
+
+**TRIGGER:** before any message that asks the user to check, approve, choose or do something.
+
+```
+HOUSEKEEPING = mandatory, done well, and done BY ME, without asking:
+  status files, logs, milestone archiving, doc sync, stale docs,
+  branch tidying, test runs, format fixes, checklists, cleanup.
+
+THE USER'S TIME IS FOR:
+  direction, priorities, product and business decisions,
+  native-Khmer judgement, money, and anything only he can know.
+
+Every message that asks him for something leads with the
+BIG PICTURE: the goal, where we are, and the next step
+that moves the goal. Housekeeping done goes in one line at the end,
+or is not mentioned at all.
+
+What to leave out of every report: plain-language.md §1.
+```
+
+**This does NOT override §6.1–§6.3.** A commit, a push, a PR, a merge or a deletion still needs his command. "Do as you think is right" is not that command. Housekeeping means local, reversible work. Report it after it is done; never ask about it before.
+
+**TEST:** for each item in the draft that asks him something, ask: could I decide or do this myself from the code, the docs and sensible defaults? If yes, do it and delete the item.
+
+**ON FAIL:** he had to ask "what's the big picture?" to get out of the small tasks. That counts as the violation. Repair it under `core-principles.md` §3.6.

@@ -64,19 +64,29 @@ Tell Monireach:
 
 ## File Structure
 
+All paths below are under `AGENT_CORE`:
+
+```
+AGENT_CORE = <My Drive>/monireach/resources/agent_core
+```
+
+Use `AGENT_CORE`, **not** `~/.claude/...`. The two point at the same files, but only the Drive path is guaranteed writable — `~/.claude` is a bind mount that may not be in `additionalDirectories`.
+
 **Centralized file (always loaded):**
-- `~/.claude/rules/about-monireach.md`
+- `AGENT_CORE/rules/universal/about-monireach.md`
 - Update "Last Updated" timestamp
 - Update relevant sections
 
-**Detailed files (created as needed):**
-- `~/.claude/profile/ml_engineering.md`
-- `~/.claude/profile/devops.md`
-- `~/.claude/profile/portfolio.md`
-- `~/.claude/profile/job_seeking.md`
-- `~/.claude/profile/health.md`
-- `~/.claude/profile/learning_history.md`
+**Detailed files (created as needed — the directory does not exist yet; create it on first write):**
+- `AGENT_CORE/profile/ml_engineering.md`
+- `AGENT_CORE/profile/devops.md`
+- `AGENT_CORE/profile/portfolio.md`
+- `AGENT_CORE/profile/job_seeking.md`
+- `AGENT_CORE/profile/health.md`
+- `AGENT_CORE/profile/learning_history.md`
 - Create new files if needed (e.g., `python.md`, `relationships.md`)
+
+**If you create any file here, add a pointer line to it under "Referenced Files" in `about-monireach.md`.** A profile file nothing points at will not get read.
 
 ## Anti-Bloat Checklist
 

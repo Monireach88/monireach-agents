@@ -1,7 +1,7 @@
 ---
 name: orchestrate-dev
 description: Use this skill when the user invokes "/orchestrate-dev". Orchestration engine — the session agent is a portal/orchestrator that never implements; persistent lower-tier workers implement each atomic task via TDD and stay interactive through their fix loop until the adversarial verifier passes. Sibling of /loop-dev (same clarity gate, ledger discipline, verifier contract) with Slot B swapped: execution is delegated to a managed pool of persistent workers under a WIP limit. Harness-universal — speaks in roles and tiers, never vendor model names; degrades explicitly on harnesses missing a capability. Best at work-sets of ~5+ parallelizable tasks; for small or serial work-sets use /loop-dev instead (first-run timing evidence, 2026-07-05).
-version: 1.2.0
+version: 1.2.1
 ---
 
 # Orchestrate Dev — Persistent-Worker Orchestration Engine
@@ -43,7 +43,7 @@ If the harness cannot spawn a different-model subagent, WORKER falls back to `in
 
 ## Phase 1 — Clarity gate (hard gate, never skipped)
 
-Identical to /loop-dev Phase 1: spawn `clarity-gatekeeper` with the working root, the instruction verbatim, and the resolved profile. REJECT → relay QUESTIONS word-for-word and STOP. READY → record TARGET, TASKS, DONE_CHECK, WARNINGS. The spec and Gherkin AC come from the project's existing pipeline (`PRODUCT_SPEC.md`, `project_status.md` AC blocks) — this skill consumes them, never invents them.
+Identical to /loop-dev Phase 1: spawn `clarity-gatekeeper` with the working root, the instruction verbatim, and the resolved profile. REJECT → relay QUESTIONS word-for-word and STOP. READY → record TARGET, TASKS, DONE_CHECK, WARNINGS. The spec and Gherkin AC come from the project's existing pipeline (`docs/prd.md`, `project_status.md` AC blocks) — this skill consumes them, never invents them. If `docs/prd.md` is absent but a legacy root `PRODUCT_SPEC.md` exists, read that instead and tell the user once to migrate it by re-running /product-spec.
 
 ## Phase 2 — Arm the orchestration
 
@@ -135,3 +135,4 @@ User interrupts mid-run: workers cost nothing idle — the risk is the ledger, n
 - ❌ Starting any work after a clarity-gate REJECT
 - ❌ Marking verified-done on your own judgment when the verifier FAILs
 - ❌ Keeping load-bearing state in your own context instead of the ledger
+- ❌ A worker editing the orchestration ledger — that file belongs exclusively to the orchestrator (observed once, first-run evidence: 2026-08-20 — a worker self-marked its own task "verified-done" in the ledger with no verifier having run; the orchestrator must treat any ledger diff arriving from a worker's worktree as suspect and re-check the actual verification state before trusting it)

@@ -61,7 +61,7 @@ When helping debug errors, use this exact sequence:
 
 ---
 
-## §4.2 Pick ONE Framework. Name It. Then Explain. (CRITICAL)
+## §4.2 Pick ONE Framework. Then Explain. (CRITICAL)
 
 **TRIGGER:** any T2 explanation.
 
@@ -75,13 +75,10 @@ When helping debug errors, use this exact sequence:
 **HARD RULES**
 
 - **Exactly ONE framework per concept.** Two means the answer is too long.
-- Print the framework name in brackets first: `[Via Negativa]`
+- **Never print the framework's name.** A label like `[Via Negativa]` is one more word he must decode. The framework shapes the answer silently.
 - The framework does **not** change the tier limit. T2 is still 5 points.
 - If no signal matches, use **VIA NEGATIVA**.
 - **HISTORICAL ORIGIN carries a hallucination risk.** Origin stories are where models invent dates, names, and companies. State the problem it solved; do not invent specifics you have not verified. If unsure, write "roughly, the problem was…" and stop there. `core-principles.md` §3.2 still applies.
-
-**Why the name is printed:** it makes the choice auditable. If the response says `[Feynman]` and then uses "orthogonal", the contradiction is visible without reading the whole thing.
-
 ---
 
 ## §4.3 The Ladder — Stop at Level 2
@@ -97,7 +94,7 @@ L4  under the hood        <- OPT-IN only
 
 **Write L1 and L2. Then stop.**
 
-This section does **not** decide how the response ends. `response-style.md` §1.1 owns every ending, and it owns them alone. So L3 and L4 are offered only when they qualify as options there — meaning you actually wrote something and cut it. A bare *"want L3 or L4?"* names no question, so it is filler and it is banned.
+`response-style.md` §1.1 owns how the response ends. Never offer "L3 or L4?" — it names nothing.
 
 Never write L3 or L4 unless he asks for it **by name**. Never output all four levels in one response.
 
@@ -116,28 +113,7 @@ Never write L3 or L4 unless he asks for it **by name**. Never output all four le
 
 **TRIGGER:** before sending any explanation.
 
-This replaces the old six-checkbox list, which had no numbers and no failure action, so "verify" was satisfied by having thought about it.
-
-```
-COUNT three things:
-  1. points (one claim | instruction | example | option)
-  2. technical terms used for the first time this session
-  3. sentences longer than 25 words
-
-IF points > tier limit  OR  new terms > 3  OR  any sentence > 25 words:
-   DO NOT SEND. Fix once.
-
-HOW to fix, in this order:
-  1. any sentence holding two ideas -> split into two sentences
-  2. still over the point limit -> CUT WHOLE POINTS
-  Never fix by shortening sentences or deleting joining words.
-
-IF it still fails:
-   send point 1 only, plus one line:
-   "I cut this down — tell me which part to expand."
-```
-
-**Never send a response that failed the count.** See `core-principles.md` §3.6 if one ships anyway.
+Run the TEST lines of `response-style.md` §1.1 (points) and §1.3 (new terms), and of `plain-language.md`. Fix in the order §1.1 ON FAIL gives. **Never send a response that failed them.** See `core-principles.md` §3.6 if one ships anyway.
 
 ---
 

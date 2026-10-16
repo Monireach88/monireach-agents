@@ -348,7 +348,7 @@ Required format per step:
 Always read the **full** `atomic_coding_framework.md` from source EVERY session (do NOT rely on memory). Do not stop early — §11 token-efficiency does not apply here:
 
 ```
-/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/deliverables/software_ai_engineering/engineering_practices/atomic_coding_framework.md
+/Users/monireach/Google Drive/My Drive/monireach/deliverables/software_ai_engineering/engineering_practices/atomic_coding_framework.md
 ```
 
 Engineering standards are auto-loaded via the project's `.claude/rules/` directory — do not read them proactively.
@@ -356,9 +356,9 @@ Engineering standards are auto-loaded via the project's `.claude/rules/` directo
 **Fallback only — read these if Step 0 detects no `.claude/rules/` for the relevant domain:** warn Monireach first, then read:
 
 ```
-/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/deliverables/software_ai_engineering/engineering_practices/code_quality_dimensions.md
+/Users/monireach/Google Drive/My Drive/monireach/deliverables/software_ai_engineering/engineering_practices/code_quality_dimensions.md
 
-/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/deliverables/software_ai_engineering/engineering_practices/engineering_standards_cheatsheet.md
+/Users/monireach/Google Drive/My Drive/monireach/deliverables/software_ai_engineering/engineering_practices/engineering_standards_cheatsheet.md
 ```
 
 ### Framework Steps to Enforce: Steps 0 → 8 + Pattern Log

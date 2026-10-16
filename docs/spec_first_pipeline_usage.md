@@ -2,7 +2,7 @@
 
 **Purpose:** how to actually *run* the spec-first pipeline — which skill to invoke first, what file each produces, and what feeds the next. The how-to companion to the two reference docs.
 
-**Last updated:** 2026-06-09
+**Last updated:** 2026-10-06 (file paths moved to `docs/` — see the note under §2)
 
 **Related docs (read by intent):**
 - **How do I use it?** → this file.
@@ -42,15 +42,17 @@ Author and Archaeologist use the same slot structure so you can compare them slo
 
 | # | Session / command | What it does | File (input → output) |
 |---|---|---|---|
-| 1 | `/ideation` | AI-led CTO interview: 7 dimensions (problem, persona, market, business model, MVP scope, compliance, differentiation), sub-agent web research, iterate to saturation | idea → **PROJECT_BRIEF.md** + writes an empty **SPEC_SKELETON.md** |
-| 2a | *(you, by hand — no AI)* | Fill the skeleton: actors, entities, CRUD matrix, journeys. Tables only, no prose. Commit it. | SPEC_SKELETON.md (empty) → filled |
-| 2b | `/product-spec` | Reads the Brief, **does NOT read your skeleton yet**, generates its own version independently, *then* reads yours and runs a mechanical diff → you merge/resolve | PROJECT_BRIEF.md + SPEC_SKELETON.md → **PRODUCT_SPEC.md** |
-| 2c | `/design-audit` *(auto-called by 2b)* | "Birth validation" — greenfield structural passes: every journey arrow lands on a filled cell, every entity has a creation path, Pass 6 completeness critic | PRODUCT_SPEC.md → in-session findings (no file) |
-| 3 | `/tc` | Tech-stack decisions only (the old Phase 1 is now `/ideation`). Seeds NFRs from spec §5 | PROJECT_BRIEF.md + PRODUCT_SPEC.md → **TECH_STACK.md** |
+| 1 | `/ideation` | AI-led CTO interview: 7 dimensions (problem, persona, market, business model, MVP scope, compliance, differentiation), sub-agent web research, iterate to saturation | idea → **docs/product-brief.md** + writes **archive/spec_skeleton.md** with every `[DERIVED]` section filled |
+| 2a | `/ideation` Step 6 *(owner interview)* | The skill asks the owner one question at a time and writes only the owner's answers into the `[OWNER]` sections (pricing, product rules, out of scope). It also asks the owner to confirm every `assumed —` cell. The owner may choose to fill the sections by hand instead. | archive/spec_skeleton.md (`[OWNER]` empty) → filled |
+| 2b | `/product-spec` | Reads the Brief, **does NOT read your skeleton yet**, generates its own version independently, *then* reads yours and runs a mechanical diff → you merge/resolve | docs/product-brief.md + archive/spec_skeleton.md → **docs/prd.md** |
+| 2c | `/design-audit` *(auto-called by 2b)* | "Birth validation" — greenfield structural passes: every journey arrow lands on a filled cell, every entity has a creation path, Pass 6 completeness critic | docs/prd.md → in-session findings (no file) |
+| 3 | `/tc` | Tech-stack decisions only (the old Phase 1 is now `/ideation`). Seeds NFRs from spec §5 | docs/product-brief.md + docs/prd.md → **docs/architecture.md** + one **docs/adr/NNNN-<title>.md** per decision |
 | 4 | `/start-local-dev` | Scaffolds the repo; absorbs the Brief into PROJECT.md + README.md | → project skeleton |
 | 5 | `/vibe-code` | TDD build loop; after each task's diff it calls `/design-audit --scope=diff` | backlog tasks → code + tests |
 
-**The whole point of the split:** ideation is AI-led (recognition is fine for business strategy). The skeleton is owner-led — *generation > recognition*: you can't notice a missing actor by reviewing AI output, only by trying to produce the list yourself first. That's why step 2a is by hand and `/product-spec` refuses to run until the skeleton exists (unless you pass `--ai-first` with a written reason).
+**The whole point of the split:** ideation is AI-led (recognition is fine for business strategy). The skeleton is co-authored. `/ideation` fills the `[DERIVED]` sections (actors, entities, CRUD, journeys) from the brief. The owner supplies the `[OWNER]` decisions (prices, product rules, scope) through the Step 6 interview: the owner gives every answer, and the skill writes only what the owner said or accepted. Missing actors and entities are caught later by three checks: `/product-spec`'s independent generation and mechanical diff, journeys that start from a stranger, and the `/design-audit` completeness pass. `/product-spec` refuses to run until the skeleton exists (unless you pass `--ai-first` with a written reason).
+
+> **File locations (since 2026-10-06):** the brief, PRD, architecture doc and ADRs live in `docs/` and are tracked in git. Every producer skill is safe to re-run: it updates its existing file instead of regenerating it. If a project still has the old root files (`PROJECT_BRIEF.md`, `PRODUCT_SPEC.md`, `TECH_STACK.md`, `SPEC_SKELETON.md`), re-run the producer skill and it offers to migrate them.
 
 > **Where do the Gherkin acceptance criteria come from?** Not from any document above. They're written into `current_state/project_status.md` task details **at phase planning, per phase** — all of a phase's AC together, just before you `/vibe-code` that phase. `/vibe-code` reads them (read-first), authoring one only as a fallback if missing.
 
@@ -77,9 +79,9 @@ This routes into `archaeologist_mode.md`. **The governing law — backfill by de
 | Phase | What runs | File produced |
 |---|---|---|
 | **0 — Reconnaissance** (mandatory first) | Get it running, rough-map the code, **trust-audit every existing doc** (current/stale/wrong/unverifiable), convention survey | starts **FINDINGS.md** (Reconnaissance section) |
-| **1 — Backfill 8 SDLC slots** (derivability order) | Slot 4 ERD → calls `/design-audit` Pass 1; Slot 5 API contract; Slot 2 SRS reverse-generated + cited; Slot 1 BRD elicited from you; Slot 3 → **ARCHITECTURE.md** (6 class-tagged sections); setup docs | **PRODUCT_SPEC.md**, **ARCHITECTURE.md**, **docs/erd.md**, README/`.env.example`/runtime/deploy docs |
+| **1 — Backfill 8 SDLC slots** (derivability order) | Slot 4 ERD → calls `/design-audit` Pass 1; Slot 5 API contract; Slot 2 SRS reverse-generated + cited; Slot 1 BRD elicited from you; Slot 3 → **docs/architecture.md** (6 class-tagged sections); setup docs | **docs/prd.md**, **docs/architecture.md**, **docs/erd.md**, README/`.env.example`/runtime/deploy docs |
 | *(inside Phase 1)* | `/design-audit --mode=archaeologist` writes its findings + undecided tables into the shared **FINDINGS.md** | FINDINGS.md (full register) |
-| **2 — Coverage footer** | 8-slot table, each marked file / derivable / skipped + epistemic class | closes PRODUCT_SPEC.md |
+| **2 — Coverage footer** | 8-slot table, each marked file / derivable / skipped + epistemic class | closes docs/prd.md |
 
 **The enforcement that keeps it honest — the epistemic three-class gate** (you can't write any section without tagging it):
 
