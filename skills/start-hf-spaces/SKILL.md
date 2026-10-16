@@ -80,7 +80,7 @@ Create every file listed in the File Spec below.
 3. **MATCH RESPONSE LENGTH TO COMPLEXITY** (`~/.claude/rules/response-style.md` §1.1)
 4. **NEVER PUSH TO REMOTE WITHOUT CONFIRMATION** (`~/.claude/rules/user-confirmation.md` §6.2)
 5. **VERIFY FACTS, DON'T TRUST USER'S WORDS** (`~/.claude/rules/core-principles.md` §3.1)
-6. **NEVER READ ENTIRE daily_log.md** (`~/.claude/rules/logging-workflow.md` §2.2)
+6. **NEVER READ ENTIRE daily_log.md** (`~/.claude/rules/logging-workflow.md` §2.1)
 
 **Complete universal rules:** `~/.claude/rules/` (auto-loaded)
 

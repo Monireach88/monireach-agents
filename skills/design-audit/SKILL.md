@@ -1,7 +1,7 @@
 ---
 name: design-audit
-description: Use when the user invokes "/design-audit". The single design-judgment engine — audits a codebase against PRODUCT_SPEC.md through enumerated passes (lifecycle/drift + ERD + unused-entity, authz/BOLA, state-machine, journey-failure, seam, completeness critic, journey trace). Never an open-ended "find flaws" prompt; every item gets a forced verdict ok | flaw | undecided with file:line evidence. Read-only on source code — findings are reported, never applied. Called at spec birth by /product-spec, manually mid-development, and by /vibe-code on diffs.
-version: 1.3.0
+description: Use when the user invokes "/design-audit". The single design-judgment engine — audits a codebase against docs/prd.md (the product spec) through enumerated passes (lifecycle/drift + ERD + unused-entity, authz/BOLA, state-machine, journey-failure, seam, completeness critic, journey trace). Never an open-ended "find flaws" prompt; every item gets a forced verdict ok | flaw | undecided with file:line evidence. Read-only on source code — findings are reported, never applied. Called at spec birth by /product-spec, manually mid-development, and by /vibe-code on diffs.
+version: 1.3.1
 ---
 
 # /design-audit — Enumerated Design Audit
@@ -28,7 +28,7 @@ You are now operating as a design auditor. Your job is to find where the code an
 
 ## Inputs
 
-1. **PRODUCT_SPEC.md** — the canonical WHAT. If absent: run DEGRADED with a loud warning ("auditing without a spec — drift cannot be measured, only internal code inconsistencies; run /product-spec to enable the full audit"). In degraded-no-spec mode, Pass 1 still re-derives the CRUD matrix from code and reports lifecycle holes (entities with no creation/deletion path), but cannot diff against intent.
+1. **`docs/prd.md`** — the canonical WHAT (the product requirements document, written by /product-spec). If it is absent but a legacy `PRODUCT_SPEC.md` exists at the project root, read that file instead and tell the user once to migrate it by re-running /product-spec. If neither exists: run DEGRADED with a loud warning ("auditing without a spec — drift cannot be measured, only internal code inconsistencies; run /product-spec to enable the full audit"). In degraded-no-spec mode, Pass 1 still re-derives the CRUD matrix from code and reports lifecycle holes (entities with no creation/deletion path), but cannot diff against intent.
 2. **The codebase** — ground truth for what IS.
 3. **Scope parameter** — full | phase | diff (default full).
 
@@ -54,7 +54,7 @@ From the persistence layer (models, migrations, collections, event types — wha
 
 ### 1b. Diff vs spec (the drift check)
 
-Cell-by-cell against PRODUCT_SPEC.md §3:
+Cell-by-cell against `docs/prd.md` §3:
 
 ```
 for each entity × op:
@@ -91,7 +91,7 @@ For every table/column (or document field) in the schema: grep the codebase for 
 
 ## Passes 2–5 — Conditional Sweeps
 
-Each of these fires ONLY when its applicability gate matches the project. **Check the gate first; if it does not fire, record `consciously skipped — <trigger> absent` in the report and move to the next pass.** Running a sweep whose trigger is absent manufactures noise (an authz sweep on a single-user script, a state-machine sweep on an entity with no status field). The gate is read from `PRODUCT_SPEC.md` + the code; when the spec is missing, derive the gate input from code and mark the pass `undecided` where intent can't be confirmed.
+Each of these fires ONLY when its applicability gate matches the project. **Check the gate first; if it does not fire, record `consciously skipped — <trigger> absent` in the report and move to the next pass.** Running a sweep whose trigger is absent manufactures noise (an authz sweep on a single-user script, a state-machine sweep on an entity with no status field). The gate is read from `docs/prd.md` + the code; when the spec is missing, derive the gate input from code and mark the pass `undecided` where intent can't be confirmed.
 
 All four follow the Pass-1 discipline: enumerate from a named source, loop every item, force a verdict `ok | flaw | undecided` with file:line evidence. Category = the pass name (`authz` | `state-machine` | `journey-failure` | `seam`), so coverage stays auditable.
 
@@ -260,7 +260,7 @@ Archaeologist mode still **never auto-creates backlog tasks** and never edits so
 
 ## Resync (`--resync`)
 
-After a process lapse (phases shipped without traces, spec not updated spec-first): re-baseline in one step — regenerate the ERD, rewrite the current phase's trace marker from present state, and record one line in the PRODUCT_SPEC.md header: `Process lapse resynced: <date>, <one-line what happened>`. No historical back-audit is demanded. The process must always be cheaper to RE-ENTER than to abandon.
+After a process lapse (phases shipped without traces, spec not updated spec-first): re-baseline in one step — regenerate the ERD, rewrite the current phase's trace marker from present state, and record one line in the `docs/prd.md` header: `Process lapse resynced: <date>, <one-line what happened>`. No historical back-audit is demanded. The process must always be cheaper to RE-ENTER than to abandon.
 
 ---
 
@@ -283,6 +283,6 @@ After a process lapse (phases shipped without traces, spec not updated spec-firs
 
 - User invokes `/design-audit` (any scope or mode)
 - /product-spec archaeologist mode calls it for ERD + unused-entity + drift findings into FINDINGS.md
-- /product-spec finishes writing PRODUCT_SPEC.md (birth validation)
+- /product-spec finishes writing `docs/prd.md` (birth validation)
 - /vibe-code completes a task and calls the diff-scope review
 - User says "audit the design", "check code against the spec", "run the drift check"

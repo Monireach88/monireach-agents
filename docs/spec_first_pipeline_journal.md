@@ -133,3 +133,17 @@ All 5 fixed → Round 2 re-verify → **PASS**, no regressions, fences clean.
 
 ### Caveat to carry forward
 "Built" here = complete as skill instructions + passed adversarial *documentation* review. The passes have NOT been exercised on a real codebase. First real run (open thread #1) is where gate behavior and enumeration-source correctness get validated against actual code.
+
+---
+
+## Session — 2026-10-06 (file rename to `docs/`)
+
+The owner approved an SDLC docs convention. Pipeline outputs moved out of the repo root into `docs/`, tracked in git:
+
+- `PROJECT_BRIEF.md` → `docs/product-brief.md`
+- `SPEC_SKELETON.md` → `archive/spec_skeleton.md` (private working draft, not committed)
+- `PRODUCT_SPEC.md` → `docs/prd.md`
+- `TECH_STACK.md` → `docs/architecture.md` (what the system is) + `docs/adr/NNNN-<title>.md` (one file per decision, Nygard format, immutable once Accepted)
+
+Every producer skill is now safe to re-run: it updates its existing output, and offers to migrate a legacy root file. Consumer skills read the new path and fall back to the legacy file with a one-time migrate notice. Old names in earlier entries and in the snapshot above are historical; the skills and `spec_first_pipeline_usage.md` hold the live paths.
+

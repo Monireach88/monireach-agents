@@ -436,7 +436,7 @@ Use this template:
 Save assessment reports here:
 
 ```
-~/.claude/skills/workflow-generator/assessments/
+<My Drive>/monireach/resources/agent_core/skills/workflow-generator/assessments/
 ├── 2026-02-10_linear_regression_v0.1.0.md  (baseline)
 ├── 2026-02-11_knn_v0.2.0.md                (test 1)
 ├── 2026-02-12_logistic_regression_v0.2.0.md (test 2)

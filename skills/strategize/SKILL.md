@@ -156,6 +156,11 @@ Draw from these principles when generating strategies. You don't need to name th
 - Do NOT moralize. The user is an adult making strategic decisions. Present tradeoffs honestly, then let them decide.
 - Do NOT be timid. The whole point of this skill is to think beyond what's obvious.
 
+## Reference Patterns
+
+For reusable strategic frameworks, see `references/`:
+- **`one-project-pattern.md`** — When the user has 3+ interconnected goals (income, skill-building, credential) and limited time, and is stuck in sequential thinking. Use ONE weekly public output as the single vehicle that forces all goals forward simultaneously.
+
 ## Activation
 
 This skill activates when:

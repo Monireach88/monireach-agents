@@ -15,7 +15,7 @@ Writes context to `skill_queue.md` for execution in a dedicated skill session.
 ## Fixed File
 
 ```
-/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/resources/agent_core/skill_queue.md
+/Users/monireach/Google Drive/My Drive/monireach/resources/agent_core/skill_queue.md
 ```
 
 ---
@@ -28,7 +28,7 @@ Spawn a sub-agent with this instruction:
 
 ```
 Read the file at:
-/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/resources/agent_core/skill_queue.md
+/Users/monireach/Google Drive/My Drive/monireach/resources/agent_core/skill_queue.md
 
 Return exactly one of:
 - "EMPTY" if the file has no content
@@ -55,7 +55,7 @@ Spawn a sub-agent with this instruction:
 
 ```
 Write the following content to this file (overwrite completely):
-/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/resources/agent_core/skill_queue.md
+/Users/monireach/Google Drive/My Drive/monireach/resources/agent_core/skill_queue.md
 
 [skill name and context prepared by main session]
 

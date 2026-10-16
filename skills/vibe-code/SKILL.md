@@ -1,7 +1,7 @@
 ---
 name: vibe-code
 description: Use this skill when the user invokes "/vibe-code". Activates vibe coding mode. Agent owns implementation, detects frontend/backend mode, and applies stack-appropriate verification while Monireach reviews and directs.
-version: 1.5.0
+version: 1.5.1
 ---
 
 # Vibe Code
@@ -159,7 +159,7 @@ Agent owns all steps. Monireach owns decisions, requirements, and owner notes.
 Always read from source EVERY session (do NOT rely on memory):
 
 ```
-/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/deliverables/software_ai_engineering/engineering_practices/atomic_coding_framework.md
+/Users/monireach/Google Drive/My Drive/monireach/deliverables/software_ai_engineering/engineering_practices/atomic_coding_framework.md
 ```
 
 Engineering standards (`backend-standards.md`, `frontend-standards.md`, `devops-standards.md`) are **always injected into context** via the global CLAUDE.md — they do not need to be read proactively and no `.claude/rules/` check is needed. Do NOT use Glob to verify the rules directory; symlinks are invisible to Glob and will produce a false "not found" alarm.
@@ -167,9 +167,9 @@ Engineering standards (`backend-standards.md`, `frontend-standards.md`, `devops-
 **Fallback only — read these if the relevant domain standards are genuinely missing from context** (i.e. not listed in the claudeMd system reminder at all):
 
 ```
-/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/deliverables/software_ai_engineering/engineering_practices/code_quality_dimensions.md
+/Users/monireach/Google Drive/My Drive/monireach/deliverables/software_ai_engineering/engineering_practices/code_quality_dimensions.md
 
-/Users/monireach/Library/CloudStorage/GoogleDrive-sebastian.tang168@gmail.com/My Drive/monireach/deliverables/software_ai_engineering/engineering_practices/engineering_standards_cheatsheet.md
+/Users/monireach/Google Drive/My Drive/monireach/deliverables/software_ai_engineering/engineering_practices/engineering_standards_cheatsheet.md
 ```
 
 ---
@@ -453,7 +453,7 @@ If a proposed task has no meaningful logic and won't make for a good interview s
 
 ### Procedure
 
-0. **Spec-first load (Gate 1 shrink):** if `PRODUCT_SPEC.md` exists, FIRST read what it already answers for this task — which actors touch it (spec §1), the entity lifecycle cells it implements (§3 CRUD matrix), the journey arrows it serves (§4), and relevant NFRs/non-goals (§5/§6). Present those as the established baseline. The diagnostic rounds below then cover ONLY residual gaps the spec does not answer. Full elicitation (all questions from scratch) applies only when no spec exists. **The owner never answers the same question twice.**
+0. **Spec-first load (Gate 1 shrink):** if `docs/prd.md` exists (or, failing that, a legacy root `PRODUCT_SPEC.md` — read it and tell the user once to migrate it by re-running /product-spec), FIRST read what it already answers for this task — which actors touch it (spec §1), the entity lifecycle cells it implements (§3 CRUD matrix), the journey arrows it serves (§4), and relevant NFRs/non-goals (§5/§6). Present those as the established baseline. The diagnostic rounds below then cover ONLY residual gaps the spec does not answer. Full elicitation (all questions from scratch) applies only when no spec exists. **The owner never answers the same question twice.**
 1. Agent prompts: "Write your requirement draft in plain English — what should this task do?"
 2. Monireach writes the draft (any length, informal language is fine).
 3. Agent reads the draft and asks **2–3 focused diagnostic questions per round** — covering the most critical gaps it sees first (skipping anything the spec already answered in step 0). Examples:
@@ -527,4 +527,4 @@ After the session, Monireach studies the tasks he chooses via `/guided-explore t
 - ❌ Running parallel worktrees on tasks that share files or the same Alembic migration path — keep them sequential
 - ❌ Skipping `/log-error` for bug fix tasks with a non-obvious root cause — if the bug was masked by a mock, a missing config, a migration side-effect, or any other subtle mechanism, it belongs in `docs/error_log.md` so it can be found and learned from
 - ❌ Authoring a second Gherkin AC set when the task's detail section already carries an `**Acceptance:**` block — read-first at Step 3a; no task may ever have two competing AC sets
-- ❌ Re-asking Gate 1 questions that PRODUCT_SPEC.md already answers — load from the spec first, ask residuals only
+- ❌ Re-asking Gate 1 questions that `docs/prd.md` already answers — load from the spec first, ask residuals only

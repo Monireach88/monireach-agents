@@ -39,6 +39,13 @@ Primary sources to inspect when present:
 - `.github/workflows/*`
 - deploy manifests such as `docker-compose*.yml`, `Dockerfile*`, `render.yaml`, `fly.toml`, `helm/`, `k8s/`, `terraform/`
 
+**Project-specific deployment references:** Some projects have deployment patterns that differ
+significantly from the generic workflow (e.g., bare-metal vs Docker, no CI/CD, manual config edits).
+Check `references/` for project-specific files before running the checklist; if one exists,
+apply its project-specific rules in place of the generic assumptions.
+
+- `references/deploy-verification.md` — Smart Chatbot: how to verify a deploy took effect, debug 502 errors, and diagnose truncated responses on the production server.
+
 Do not hardcode project commands into the core workflow. Use repo-discovered values at runtime.
 
 ## Project adaptation examples
@@ -329,6 +336,17 @@ The release goes through a PR into `main` — CI re-runs on it, and merging it i
    git switch development && git pull
    ```
    Both pulls should be clean fast-forwards — `main` just received the merge commit, and local `development` should never have commits that aren't already on `origin/development` (vibe-code branches from `origin/development` directly and pushes via PR, never merging into local `development`). If `git pull development` reports divergence here, it means a prior session violated that rule — fix it with `git reset --hard origin/development`.
+
+**Pitfall — CI/CD handles the build and deploy, not you:** Once the release PR
+merges into `main`, the CI/CD pipeline (this project: `deploy-prod.yml`) builds the
+Docker image, pushes it to GHCR, and the self-hosted runner pulls and recreates
+containers. **Never** manually `docker build`, `docker save`, `scp`, or `docker
+compose up` to deploy — the pipeline is the single source of truth. If you think
+the deploy didn't run, check GitHub Actions for the workflow run triggered by the
+push to `main`. If the container isn't picking up changes after a successful
+deploy, the issue is likely that `docker compose up` didn't detect the image
+change — use `docker compose up -d --force-recreate` on the affected service,
+or verify with `docker inspect <container> --format '{{.Config.Cmd}}'`.
 
 After push, display post-release steps:
 
