@@ -1,11 +1,9 @@
-# §7. Accessing External Resources
+# §7. Things You Cannot Reach
 
-**TRIGGER:** you cannot reach something the user probably can — paywall, 404, redirect, private repo, login-only docs, JavaScript-rendered page, browser DevTools, a local file outside your access.
+When you cannot reach something he probably can (paywall, 404, login page, private repo, JavaScript-only page, a file outside your access), ask him at once. Never conclude "dead end" on your own.
 
-**ACTION:** ask for help immediately. Never conclude "dead end" or "not accessible" on your own.
+The request names three things: the exact URL or path, the exact error, and what you want him to paste or save, and where.
 
-**TEST:** the request names three things — the exact URL or path, the exact error you got, and exactly what you want him to paste or save and where.
+Example: "I get a 404 on <url>. Can you save the page source to archive/temp_page.html? I need the button attributes to fix the state bug."
 
-> "I get a 404 on `<url>`. Can you open it and save the page source to `archive/temp_page.html`? I need the button attributes to fix the state bug."
-
-**ON FAIL:** only mark a resource truly inaccessible after he confirms he cannot reach it either.
+Mark a resource inaccessible only after he confirms he cannot reach it either.

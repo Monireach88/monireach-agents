@@ -47,6 +47,28 @@ Two things that look complete and are not:
 - **A completed child subtask under a parent still in progress stays put.** Removing it makes the task tree ambiguous.
 - **A completed task whose phase still has open tasks stays put** when it carries an `**Acceptance:**` block, because the Gherkin chains across tasks in a phase. Mark it `### ✅ Task Name *(awaiting phase-end archival)*` so the integrity check can tell it apart from an oversight.
 
+**And the reverse: tasks that ARE finished but are not marked ✅.** A task leaves the list when its work is over, not when somebody remembered to change its symbol, and the symbol is the last thing anyone updates. Find them in two steps, and keep the cost down by reading details only where a line gives a reason to.
+
+**Step A — read every line of every Task List (V1, V2, V3 …), and nothing below them.** The lists are a few dozen lines, so this is cheap, and reading them side by side is what catches a task overtaken by *another* task. Mark a line as a **suspect** when any of these holds:
+
+- this session worked on it, or changed something it names (a file, a package, an ID, a person's decision);
+- its own words say the remaining work is someone else's call, or is done ("only owner calls remain", "half done");
+- it names a date that has passed, or an event that has happened (a meeting, a demo);
+- it contradicts `Current State`, the project's instruction file, or another line (a count, a status, a file said to exist).
+
+**Step B — open the details of suspects only, and give each a verdict backed by one fact from the files** (a merged pull request, a deleted directory, a gate that now exits 0, a decision recorded in the log), never by the task's own words:
+
+| The task… | Verdict | Do |
+|---|---|---|
+| has every step done, or its only remainder is already another open task's subject | **finished** | archive it as above; its milestone entry names which task now owns the remainder |
+| is about something removed, retired or ruled out since it was written | **overtaken** | close it under one `❌ … closed without building` entry in `milestone.md`, with the reason, and remove it |
+| still describes open work, but a sentence in it is no longer true | **open, corrected** | keep it; fix the stale sentence and its list line |
+| needs the user to say whether an event happened, the work is still wanted, or it belongs in V2 | **ask** | ask once, for all such tasks together; never decide it yourself |
+
+**What makes Step A enough: a task's list line always states its current state.** Whenever this session writes progress or a decision into a task's details, update that task's list line in the same edit, in a few words ("decided out of scope 2026-10-04", "only the owner's call remains"). A decision that lives only in the details is invisible to Step A, and that is exactly how a task stays open after it is over. Before finishing, check that every task this session wrote details for has a list line that says what changed.
+
+*Evidence: on 2026-10-13 a close-out of `project_documentations` archived the two tasks marked ✅ and reported the file clean; every mechanical check passed. The user asked for the tasks to be checked one by one, and 17 of 35 were finished or overtaken — a backend clean-up whose pull request had merged two weeks earlier, a meeting-pack task for a meeting already held, a check on packages that no longer existed, a task the user had closed by decision nine days before. None carried a ✅. Re-reading only the list lines afterwards, about 10 of the 17 could be judged from the line alone; the other 7 had their real state only in the details — the user's decision on one sat in its details while its list line still read "Settle" — which is why the list line must be kept current. Only 1 of the 17 had been worked on by the closing session, so a rule limited to the session's own tasks would have found 1.*
+
 ---
 
 ## Step 3 - Validate and repair `project_status.md`
