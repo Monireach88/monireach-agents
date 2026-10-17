@@ -1,19 +1,19 @@
 {
+  "env": {
+    "AGENT_CORE_DIR": "/Users/monireach/Google Drive/My Drive/monireach/resources/agent_core"
+  },
   "permissions": {
     "allow": [
       "mcp__claude_ai_ClickUp__clickup_update_task",
       "mcp__claude_ai_ClickUp__clickup_create_comment",
-      "Write(//Users/monireach/Library/CloudStorage/GoogleDrive-*/My Drive/monireach/_project_archive/**)",
       "Edit(//Users/monireach/Library/CloudStorage/GoogleDrive-*/My Drive/monireach/_project_archive/**)",
-      "Write(//Users/monireach/Library/CloudStorage/GoogleDrive-*/My Drive/monireach/_project_current_state/**)",
       "Edit(//Users/monireach/Library/CloudStorage/GoogleDrive-*/My Drive/monireach/_project_current_state/**)",
-      "Write(//Users/monireach/projects/*/archive/**)",
       "Edit(//Users/monireach/projects/*/archive/**)",
       "Bash(git push:*)",
       "Bash(gh pr:*)"
     ]
   },
-  "model": "opus[1m]",
+  "model": "opus",
   "hooks": {
     "Stop": [
       {
@@ -83,6 +83,7 @@
     }
   },
   "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
   "autoCompactEnabled": true,
   "agentPushNotifEnabled": true,
@@ -114,8 +115,5 @@
       "routine under /Users/monireach/projects/kh_ai_model/ prefix qualifier applies to file and git operations scoped to this repo"
     ]
   },
-  "skipDangerousModePermissionPrompt": true,
-  "env": {
-    "AGENT_CORE_DIR": "/Users/monireach/Google Drive/My Drive/monireach/resources/agent_core"
-  }
+  "theme": "dark"
 }

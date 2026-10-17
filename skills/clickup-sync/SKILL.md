@@ -212,6 +212,12 @@ Use the `id` and `username` from `config.comment_mention`. Never type them from 
 
 Comments are posted from the user's account, so write them as the user ("I", "we"). Never refer to the user by name ("Reach accepted…").
 
+**Speak to the recipient with respect.** Right after the mention, address the person politely and ask rather than tell. Use the title the user gave for that person (for example "Mr. Adrian"); never guess a title from a name. End with a short thanks.
+```
+[@Adrian Paschkow](#user_mention#5991023)  Mr. Adrian, there is a new version of ... Thank you.
+```
+**TEST:** the first words after the mention are a polite address, and the comment asks ("Please send ...") instead of orders ("Send ...").
+
 ### §2.9 ClickUp status follows the work — never wait for `/clickup-sync push`
 
 **Why this exists:** tasks were finished locally while ClickUp still showed the
